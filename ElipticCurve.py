@@ -5,6 +5,7 @@
 
 import hashlib
 import base58
+import urllib2
 
 Pcurve = 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 -1 # The proven prime
 N=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141 # Number of points in the field
@@ -13,8 +14,12 @@ Gx = 550662630222773436695787188951685343262506034537775941755001873603891167292
 Gy = 32670510020758816978083085130507043184471273380659243275938904335757337482424
 GPoint = (Gx,Gy) # This is our generator point. Trillions of dif ones possible
 
-#Individual Transaction/Personal Information
-privKey = 0x18E14A7B6A307F426A94F8114701E7C8E774E7F9A47E2C2035DB29A206321725 #replace with any private key
+
+def getRandomPrivateKey():
+    response = urllib2.urlopen('https://www.random.org/cgi-bin/randbyte?nbytes=32&format=b')
+    html = response.read()
+    html = html.replace('\n','').replace(' ','')
+    return int(html,2)
 
 def modinv(a,n=Pcurve): #Extended Euclidean Algorithm/'division' in elliptic curves
     lm, hm = 1,0
@@ -48,12 +53,13 @@ def EccMultiply(GenPoint,ScalarHex): #Double & add. Not true multiplication
     return (Q)
 
 
+#Individual Transaction/Personal Information
+#privKey = 0x18E14A7B6A307F426A94F8114701E7C8E774E7F9A47E2C2035DB29A206321725
+privKey = getRandomPrivateKey()
+
 PublicKey = EccMultiply(GPoint,privKey)
 PublicKeyHex = "04" + "%064x" % PublicKey[0] + "%064x" % PublicKey[1];
 
-print ""
-print ""
-print "RADDE **************"
 
 print "Privkey: %x" % privKey
 print "Pubkey:  %s" % PublicKeyHex
@@ -63,41 +69,43 @@ print ""
 PublicKeyHex = PublicKeyHex.decode('hex')
 publicECDSA = hashlib.sha256(PublicKeyHex).digest()
 publicECDSA = publicECDSA.encode('hex_codec')
-print publicECDSA
+#print publicECDSA
 
 #RIPEMD-160
 ripemd160 = hashlib.new('ripemd160')
 ripemd160.update(hashlib.sha256(PublicKeyHex).digest())
 ripmed160 = ripemd160.hexdigest()
-print ripmed160
+#print ripmed160
 
 #Add version byte in front of RIPEMD-160 hash (0x00 for Main Network)
 ripmed160 = "00" + ripmed160
 tmp = ripmed160
-print ripmed160
+#print ripmed160
 
 #Perform SHA-256 hash on the extended RIPEMD-160 result
 ripmed160 = ripmed160.decode('hex')
 ripmed160 = hashlib.sha256(ripmed160).digest()
 ripmed160 = ripmed160.encode('hex_codec')
-print ripmed160
+#print ripmed160
 
 # Perform SHA-256 hash on the result of the previous SHA-256 hash
 ripmed160 = ripmed160.decode('hex')
 ripmed160 = hashlib.sha256(ripmed160).digest()
 ripmed160 = ripmed160.encode('hex_codec')
-print ripmed160
+#print ripmed160
 
 #Take the first 4 bytes of the second SHA-256 hash. This is the address checksum
 chunk = ripmed160[:8]
-print chunk
+#print chunk
 
 #Add the 4 checksum bytes from stage 7 at the end of extended RIPEMD-160 hash from stage 4
 BTCaddr = tmp + chunk
-print BTCaddr
+#print BTCaddr
 
 #Base58 encoding of 8
 unencoded_string = str(bytearray.fromhex(BTCaddr))
 BTCpublicAddr = base58.b58encode(unencoded_string)
-print BTCpublicAddr
+print ""
+print "Private Key %x" % privKey
+print "Bitcoin address %s" % BTCpublicAddr
 
