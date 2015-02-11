@@ -105,7 +105,7 @@ class KeyManager():
         return b
 
     def getPrivkey(self):
-        return self.privateKey
+        return "%x" % self.privateKey
 
     def getPrivkeyWIF(self):
         #Add 0x80 byte to the front
@@ -182,7 +182,7 @@ class KeyManager():
 a = KeyManager()
 
 WIF = a.getPrivkeyWIF()
-print "Privkey: %s" % hex(a.getPrivkey())
+print "Privkey: %s" % a.getPrivkey()
 print "Pubkey:  %s" % a.getPubkey()
 print "PrivateKeyWIF: %s" % a.getPrivkeyWIF()
 print "BitcoinPublicAddress: %s" % a.getPubAddress()
