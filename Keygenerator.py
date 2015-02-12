@@ -107,9 +107,13 @@ class KeyManager():
     def getPrivkey(self):
         return "%x" % self.privateKey
 
-    def getPrivkeyWIF(self):
+    def getPrivkeyWIF(self, compressed=False):
         #Add 0x80 byte to the front
-        privKeyWIF = "80%x" % self.privateKey
+        if compressed:
+            #Append 01 if compressed
+            privKeyWIF = "80%x01" % self.privateKey
+        else:
+            privKeyWIF = "80%x" % self.privateKey
         tmp = privKeyWIF
 
         #SHA-256 hash of 2
@@ -185,6 +189,7 @@ WIF = a.getPrivkeyWIF()
 print "Privkey: %s" % a.getPrivkey()
 print "Pubkey:  %s" % a.getPubkey()
 print "PrivateKeyWIF: %s" % a.getPrivkeyWIF()
+print "PrivateKeyWIF compressed: %s" % a.getPrivkeyWIF(True)
 print "BitcoinPublicAddress: %s" % a.getPubAddress()
 print "Check if WIF is valid: %s" % a.WIFCheckSum(WIF)
 
