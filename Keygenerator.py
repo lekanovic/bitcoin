@@ -169,7 +169,6 @@ class KeyManager():
 
             p = self.alignHex(p)
 
-            print "Rand len %d %x %s" % (len(p),a.Point[0],str(p))
             PublicKeyHex = p.decode('hex')
         else:
             PublicKeyHex = self.publicKey.decode('hex')
