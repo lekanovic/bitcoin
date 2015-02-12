@@ -83,6 +83,7 @@ class KeyManager():
         decoded = self.base58decode(privateWIF)
         tmp = "%x" % decoded
         b = str(hex(decoded))[2:-9]
+        b = self.alignHex(b)
         b = b.decode('hex')
         b = hashlib.sha256(b).digest()
         b = b.encode('hex_codec')
@@ -115,6 +116,7 @@ class KeyManager():
         else:
             privKeyWIF = "80%x" % self.privateKey
         tmp = privKeyWIF
+        privKeyWIF = self.alignHex(privKeyWIF)
 
         #SHA-256 hash of 2
         privKeyWIF = privKeyWIF.decode('hex')
@@ -139,6 +141,23 @@ class KeyManager():
 
         return privKeyWIF
 
+    def regenerate(self):
+        response = urllib2.urlopen(self.url)
+        html = response.read()
+        html = html.replace('\n','').replace(' ','')
+        self.privateKey = int(html,2)
+
+        ec = ElipticCurve()
+        self.Point = ec.EccMultiply(self.privateKey)
+        self.publicKey = "04" + "%064x" % self.Point[0] + "%064x" % self.Point[1];
+        self.alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+     # Make sure that the key length is even. Otherwise
+     # calling string.encode('hex') will crash.
+    def alignHex(self, h):
+        if len(h) % 2 != 0:
+            return "0%s" % h
+        return h
+
     def getPubAddress(self, compressed=False):
         if compressed:
             p=int(str(a.Point[1])[-1:])
@@ -147,6 +166,10 @@ class KeyManager():
                 p = "02%x" % a.Point[0]
             else:
                 p = "03%x" % a.Point[0]
+
+            p = self.alignHex(p)
+
+            print "Rand len %d %x %s" % (len(p),a.Point[0],str(p))
             PublicKeyHex = p.decode('hex')
         else:
             PublicKeyHex = self.publicKey.decode('hex')
@@ -191,22 +214,23 @@ class KeyManager():
 
         return BTCpublicAddr
 
+while 1:
+    a = KeyManager()
+    import time
+    WIF = a.getPrivkeyWIF()
+    print "-Privkey-"
+    print "    %s" % a.getPrivkey()
+    print "-Pubkey-"
+    print "    %s" % a.getPubkey()
 
-a = KeyManager()
+    print "-PrivateKeyWIF-"
+    print "    Uncompressed: %s" % a.getPrivkeyWIF()
+    print "    Compressed: %s" % a.getPrivkeyWIF(True)
 
-WIF = a.getPrivkeyWIF()
-print "-Privkey-"
-print "    %s" % a.getPrivkey()
-print "-Pubkey-"
-print "    %s" % a.getPubkey()
+    print "-Bitcoin Public Address-"
+    print "    Uncompressed: %s" % a.getPubAddress()
+    print "    Compressed: %s" % a.getPubAddress(True)
 
-print "-PrivateKeyWIF-"
-print "    Uncompressed %s" % a.getPrivkeyWIF()
-print "    Compressed %s" % a.getPrivkeyWIF(True)
-
-print "-Bitcoin Public Address-"
-print "    Uncompressed: %s" % a.getPubAddress()
-print "    Compressed: %s" % a.getPubAddress(True)
-
-print "WIF is valid: %s" % a.WIFCheckSum(WIF)
-
+    print "WIF is valid: %s" % a.WIFCheckSum(WIF)
+    a.regenerate()
+    time.sleep(1)
