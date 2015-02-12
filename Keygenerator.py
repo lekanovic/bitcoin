@@ -56,8 +56,8 @@ class KeyManager():
         self.privateKey = int(html,2)
 
         ec = ElipticCurve()
-        self.publicKey = ec.EccMultiply(self.privateKey)
-        self.publicKey = "04" + "%064x" % self.publicKey[0] + "%064x" % self.publicKey[1];
+        self.Point = ec.EccMultiply(self.privateKey)
+        self.publicKey = "04" + "%064x" % self.Point[0] + "%064x" % self.Point[1];
         self.alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
     def base58encode(self, n):
@@ -139,9 +139,18 @@ class KeyManager():
 
         return privKeyWIF
 
-    def getPubAddress(self):
-        #SHA-256
-        PublicKeyHex = self.publicKey.decode('hex')
+    def getPubAddress(self, compressed=False):
+        if compressed:
+            p=int(str(a.Point[1])[-1:])
+
+            if p % 2 == 0:
+                p = "02%x" % a.Point[0]
+            else:
+                p = "03%x" % a.Point[0]
+            PublicKeyHex = p.decode('hex')
+        else:
+            PublicKeyHex = self.publicKey.decode('hex')
+
         publicECDSA = hashlib.sha256(PublicKeyHex).digest()
         publicECDSA = publicECDSA.encode('hex_codec')
         #print publicECDSA
@@ -186,10 +195,18 @@ class KeyManager():
 a = KeyManager()
 
 WIF = a.getPrivkeyWIF()
-print "Privkey: %s" % a.getPrivkey()
-print "Pubkey:  %s" % a.getPubkey()
-print "PrivateKeyWIF: %s" % a.getPrivkeyWIF()
-print "PrivateKeyWIF compressed: %s" % a.getPrivkeyWIF(True)
-print "BitcoinPublicAddress: %s" % a.getPubAddress()
-print "Check if WIF is valid: %s" % a.WIFCheckSum(WIF)
+print "-Privkey-"
+print "    %s" % a.getPrivkey()
+print "-Pubkey-"
+print "    %s" % a.getPubkey()
+
+print "-PrivateKeyWIF-"
+print "    Uncompressed %s" % a.getPrivkeyWIF()
+print "    Compressed %s" % a.getPrivkeyWIF(True)
+
+print "-Bitcoin Public Address-"
+print "    Uncompressed: %s" % a.getPubAddress()
+print "    Compressed: %s" % a.getPubAddress(True)
+
+print "WIF is valid: %s" % a.WIFCheckSum(WIF)
 
