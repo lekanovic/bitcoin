@@ -1,6 +1,8 @@
 import hashlib
 import urllib2
 
+# Keygenerator is a deterministic wallet of Type1.
+# https://en.bitcoin.it/wiki/Deterministic_wallet
 
 class ElipticCurve():
 
@@ -48,13 +50,13 @@ class ElipticCurve():
 
 class KeyManager():
 
-    def __init__(self):
-        self.url = 'https://www.random.org/cgi-bin/randbyte?nbytes=32&format=b'
-        response = urllib2.urlopen(self.url)
-        html = response.read()
-        html = html.replace('\n','').replace(' ','')
-        self.privateKey = int(html,2)
+    def __init__(self, k):
+        self.privateKey = k
 
+        self.runEC()
+        self.n = 1
+
+    def runEC(self):
         ec = ElipticCurve()
         self.Point = ec.EccMultiply(self.privateKey)
         self.publicKey = "04" + "%064x" % self.Point[0] + "%064x" % self.Point[1];
@@ -63,7 +65,7 @@ class KeyManager():
     def base58encode(self, n):
         result = ''
         while n > 0:
-            result = self.alphabet[n%58] + result
+            result = self.alphabet[n % 58] + result
             n /= 58
         return result
 
@@ -94,7 +96,6 @@ class KeyManager():
         b = "%x" % int(b, 16)
 
         return tmp.startswith('80') or tmp.startswith('ef') and b[:8] == tmp[-8:]
-
 
     def WIFtoPrivKey(self, privateWIF):
         if privateWIF[0] == 'K' or privateWIF[0] == 'L':
@@ -141,18 +142,24 @@ class KeyManager():
 
         return privKeyWIF
 
+    # Generate an new private key based on the current one + n
+    # n is a sequense 1,2,3,..,n
+    # Using this method we can recreate all the private key from
+    # first one.
     def regenerate(self):
-        response = urllib2.urlopen(self.url)
-        html = response.read()
-        html = html.replace('\n','').replace(' ','')
-        self.privateKey = int(html,2)
+        privKey = self.getPrivkey() + str(self.n)
+        if len(privKey) % 2 != 0:
+            privKey = "0" + self.getPrivkey() + str(self.n)
+        privKey = privKey.decode('hex')
+        privKey = hashlib.sha256(privKey).digest()
+        privKey = privKey.encode('hex_codec')
 
-        ec = ElipticCurve()
-        self.Point = ec.EccMultiply(self.privateKey)
-        self.publicKey = "04" + "%064x" % self.Point[0] + "%064x" % self.Point[1];
-        self.alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-     # Make sure that the key length is even. Otherwise
-     # calling string.encode('hex') will crash.
+        self.privateKey = int(privKey, 16)
+        self.runEC()
+        self.n = self.n + 1
+
+    # Make sure that the key length is even. Otherwise
+    # calling string.encode('hex') will crash.
     def alignHex(self, h):
         if len(h) % 2 != 0:
             return "0%s" % h
@@ -160,7 +167,7 @@ class KeyManager():
 
     def getPubAddress(self, compressed=False):
         if compressed:
-            p=int(str(a.Point[1])[-1:])
+            p = int(str(a.Point[1])[-1:])
 
             if p % 2 == 0:
                 p = "02%x" % a.Point[0]
@@ -213,23 +220,41 @@ class KeyManager():
 
         return BTCpublicAddr
 
-while 1:
-    a = KeyManager()
-    import time
-    WIF = a.getPrivkeyWIF()
-    print "-Privkey-"
-    print "    %s" % a.getPrivkey()
-    print "-Pubkey-"
-    print "    %s" % a.getPubkey()
+    def toString(self):
+        WIF = self.getPrivkeyWIF()
+        print "-Privkey-"
+        print "    %s" % self.getPrivkey()
+        print "-Pubkey-"
+        print "    %s" % self.getPubkey()
 
-    print "-PrivateKeyWIF-"
-    print "    Uncompressed: %s" % a.getPrivkeyWIF()
-    print "    Compressed: %s" % a.getPrivkeyWIF(True)
+        print "-PrivateKeyWIF-"
+        print "    Uncompressed: %s" % self.getPrivkeyWIF()
+        print "    Compressed: %s" % self.getPrivkeyWIF(True)
 
-    print "-Bitcoin Public Address-"
-    print "    Uncompressed: %s" % a.getPubAddress()
-    print "    Compressed: %s" % a.getPubAddress(True)
+        print "-Bitcoin Public Address-"
+        print "    Uncompressed: %s" % self.getPubAddress()
+        print "    Compressed: %s" % self.getPubAddress(True)
 
-    print "WIF is valid: %s" % a.WIFCheckSum(WIF)
+        print "WIF is valid: %s" % self.WIFCheckSum(WIF)
+
+
+# True random number from random.org. The randomness is based on
+# atmospheric noise.
+def randomKey():
+    url = 'https://www.random.org/cgi-bin/randbyte?nbytes=32&format=b'
+    response = urllib2.urlopen(url)
+    html = response.read()
+    html = html.replace('\n', '').replace(' ', '')
+    privateKey = int(html, 2)
+    return privateKey
+
+rootKey = randomKey()
+#rootKey = 0xe602879fbd6116309f9175ef887cdaf660a4b51c11bedb4c082e78115bcd2906
+a = KeyManager(rootKey)
+
+for i in range(0,10):
+    a.toString()
     a.regenerate()
-    time.sleep(1)
+    a.toString()
+    a.regenerate()
+    a.toString()
