@@ -1,5 +1,8 @@
+#Start virtal environment call it 'ENV'
+virtualenv ENV
+
 #create an freeze of installed items
-pip freeze > requirements.txt
+ENV/bin/pip freeze > requirements.txt
 
 #install the modules
 ENV/bin/pip install -r requirements.txt
