@@ -1,0 +1,5 @@
+#create an freeze of installed items
+pip freeze > requirements.txt
+
+#install the modules
+ENV/bin/pip install -r requirements.txt

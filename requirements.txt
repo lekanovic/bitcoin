@@ -1,0 +1,12 @@
+PyYAML==3.11
+argparse==1.2.1
+base58==0.2.1
+crypto==1.3.3
+distribute==0.6.24
+pyBIP0038==0.0.4
+pycrypto==2.6.1
+python-bitcoinlib==0.2.1
+randomdotorg==0.1.3a3
+requests==2.5.1
+scrypt==0.6.1
+wsgiref==0.1.2
