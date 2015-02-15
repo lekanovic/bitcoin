@@ -22,4 +22,7 @@ print bip38key
 
 base58privkey = pyBIP0038.decrypt_priv_key(passPhrase, bip38key)
 
-print base58privkey
+if base58privkey == False:
+	print "The password was incorrect"
+else:
+	print base58privkey
