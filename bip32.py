@@ -4,7 +4,7 @@
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode
 from pycoin.serialize import b2h
-
+from randomseed import RandomSeed
 
 def create_output(item, key, subkey_path=None):
     output_dict = {}
@@ -96,7 +96,9 @@ def dump_output(output_dict, output_order):
             print("%s%s: %s" % (hr_key, space_padding, val))
 
 
-secretPass = 'passphrase'
+secretPass = RandomSeed.generate(512)
+print "Seed: %x" % secretPass
+secretPass = str(secretPass)
 
 key = BIP32Node.from_master_secret(secretPass.encode("utf8"), netcode='BTC')
 

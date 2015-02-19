@@ -1,5 +1,5 @@
 import hashlib
-import urllib2
+from randomseed import RandomSeed
 
 # Keygenerator is a deterministic wallet of Type1.
 # https://en.bitcoin.it/wiki/Deterministic_wallet
@@ -238,21 +238,11 @@ class KeyManager():
         print "WIF is valid: %s" % self.WIFCheckSum(WIF)
 
 
-# True random number from random.org. The randomness is based on
-# atmospheric noise.
-def randomKey():
-    url = 'https://www.random.org/cgi-bin/randbyte?nbytes=32&format=b'
-    response = urllib2.urlopen(url)
-    html = response.read()
-    html = html.replace('\n', '').replace(' ', '')
-    privateKey = int(html, 2)
-    return privateKey
-
-rootKey = randomKey()
+rootKey = RandomSeed().generate()
 #rootKey = 0xe602879fbd6116309f9175ef887cdaf660a4b51c11bedb4c082e78115bcd2906
 a = KeyManager(rootKey)
 
-for i in range(0,10):
+for i in range(0,2):
     a.toString()
     a.regenerate()
     a.toString()
