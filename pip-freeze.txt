@@ -1,9 +1,14 @@
 #Start virtal environment call it 'ENV'
 virtualenv ENV
-. ENV/bin/activate
+source ENV/bin/activate
 
 #create an freeze of installed items
 ENV/bin/pip freeze > requirements.txt
 
 #install the modules
 ENV/bin/pip install -r requirements.txt
+
+#install modules directly from github.
+#prepend "git+"
+#add branch name "@master"
+pip install git+https://github.com/trezor/python-mnemonic.git@master

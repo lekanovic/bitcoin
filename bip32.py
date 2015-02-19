@@ -3,8 +3,9 @@
 
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode
-from pycoin.serialize import b2h
-from randomseed import RandomSeed
+from pycoin.serialize import b2h, h2b, h2b_rev
+from mnemonic import Mnemonic
+import binascii
 
 def create_output(item, key, subkey_path=None):
     output_dict = {}
@@ -19,7 +20,6 @@ def create_output(item, key, subkey_path=None):
 
     network_name = network_name_for_netcode(key._netcode)
     full_network_name = full_network_name_for_netcode(key._netcode)
-    add_output("input", item)
     add_output("network", full_network_name)
     add_output("netcode", key._netcode)
 
@@ -95,25 +95,51 @@ def dump_output(output_dict, output_order):
                 val = "%s\\\n%s%s" % (val[:66], ' ' * (5 + max_length), val[66:])
             print("%s%s: %s" % (hr_key, space_padding, val))
 
+# Generate seed using BIP39
+def BIP39_seed():
+    mnemo = Mnemonic('english')
+    words = mnemo.generate(512)
 
-secretPass = RandomSeed.generate(512)
-print "Seed: %x" % secretPass
-secretPass = str(secretPass)
+    if not mnemo.check(words):
+        print "Something went wrong"
+        exit(1)
 
-key = BIP32Node.from_master_secret(secretPass.encode("utf8"), netcode='BTC')
+    seed = Mnemonic.to_seed(words)
 
-subkey = key.subkey_for_path("1H")
+    return seed, words
 
-output_dict, output_order = create_output(secretPass, key)
+seed, words = BIP39_seed()
+
+print "Mnemonic:"
+print words
+print "Seed:"
+print b2h(seed)
+
+master = BIP32Node.from_master_secret(seed, netcode='BTC')
+
+m0p = master.subkey(is_hardened=True)
+pub_m0p = master.subkey(is_hardened=True, as_private=False)
+
+m0p1 = m0p.subkey(i=1)
+pub_m0p1 = m0p.subkey(i=1, as_private=False)
+
+m0p2 = m0p.subkey(i=2)
+pub_m0p2 = m0p.subkey(i=2, as_private=False)
+
+m0p1_1_2p = m0p1.subkey(i=2, is_hardened=True)
+pub_m0p1_1_2p = m0p1.subkey(i=2, as_private=False, is_hardened=True)
+
+'''
+output_dict, output_order = create_output(seed, master)
 dump_output(output_dict, output_order)
 
-output_dict, output_order = create_output(secretPass, subkey)
+output_dict, output_order = create_output(seed, subkey)
 dump_output(output_dict, output_order)
 
-ssubkey = subkey.subkey_for_path("2H")
-
-output_dict, output_order = create_output(secretPass, ssubkey)
+output_dict, output_order = create_output(seed, ssubkey)
 dump_output(output_dict, output_order)
 
-for key in key.subkeys("1H"):
+
+for key in master.subkeys("1H"):
     print key
+'''
