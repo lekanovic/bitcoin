@@ -5,9 +5,10 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode
 from pycoin.serialize import b2h, h2b, h2b_rev
 from mnemonic import Mnemonic
+from account import Account
 import binascii
 
-def create_output(item, key, subkey_path=None):
+def print_key_info(key, subkey_path=None):
     output_dict = {}
     output_order = []
 
@@ -79,10 +80,6 @@ def create_output(item, key, subkey_path=None):
         add_output("%s_address_uncompressed" % key._netcode,
                 key.address(use_uncompressed=True), " uncompressed")
 
-    return output_dict, output_order
-
-
-def dump_output(output_dict, output_order):
     print('')
     max_length = max(len(v[1]) for v in output_order)
     for key, hr_key in output_order:
@@ -94,6 +91,7 @@ def dump_output(output_dict, output_order):
             if len(val) > 80:
                 val = "%s\\\n%s%s" % (val[:66], ' ' * (5 + max_length), val[66:])
             print("%s%s: %s" % (hr_key, space_padding, val))
+
 
 # Generate seed using BIP39
 def BIP39_seed():
@@ -108,28 +106,85 @@ def BIP39_seed():
 
     return seed, words
 
-seed, words = BIP39_seed()
+def BIP39_static_seed():
+    words = 'category fiscal fuel great review rather useful shop middle defense cube vacuum resource fiber special nurse chief category mask display bag echo concert click february fame tenant innocent affair usual hole soon bean adjust shoe voyage immune chest gaze chaos tip way glimpse sword tray craft blur seminar'
+    seed = h2b('6ad72bdbc8b5c423cdc52be4b27352086b230879a0fd642bbbb19f5605941e3001eb70c6a53ea090f28d4b0e3033846b23ae2553c60a9618d7eb001c3aba2a30')    
+    return seed, words
+
+seed, words = BIP39_static_seed()
 
 print "Mnemonic:"
 print words
 print "Seed:"
 print b2h(seed)
 
-master = BIP32Node.from_master_secret(seed, netcode='BTC')
+grand_master = BIP32Node.from_master_secret(seed, netcode='BTC')
+'''
+print_key_info(seed, master)
 
-m0p = master.subkey(is_hardened=True)
-pub_m0p = master.subkey(is_hardened=True, as_private=False)
+m0p = master.subkey(i=0, is_hardened=True)
+pub_m0p = master.subkey(i=0, is_hardened=True, as_private=False)
+print_key_info(seed, m0p)
 
-m0p1 = m0p.subkey(i=1)
-pub_m0p1 = m0p.subkey(i=1, as_private=False)
+#m0p1 = m0p.subkey(i=0)
+pub_m0p1 = m0p.subkey(i=0, as_private=False)
+print_key_info(seed, pub_m0p1)
 
-m0p2 = m0p.subkey(i=2)
-pub_m0p2 = m0p.subkey(i=2, as_private=False)
+account1 = Account('Radovan','Lekanovic','lekanovic@gmail.com',pub_m0p1.wallet_key(as_private=False))
 
+#m0p2 = m0p.subkey(i=1)
+pub_m0p2 = m0p.subkey(i=1, as_private=False)
+
+account2 = Account('Maja','Lekanovic','majasusa@hotmail.com',pub_m0p2.wallet_key(as_private=False))
+
+account2.generate_key()
+account2.generate_key()
+account2.generate_key()
+account2.generate_key()
+
+account1.wallet_info()
+account2.wallet_info()
+'''
+
+# Get master key path
+master = grand_master.subkey_for_path("")
+# Get sub master key path
+master_sub = master.subkey_for_path("0H")
+
+# Account 1 path - Create sub tree. Use only public
+a = master_sub.subkey_for_path("0H/0.pub")
+account1 = Account('Radovan','Lekanovic','lekanovic@gmail.com', a)
+account1.wallet_info()
+
+# Account 2 path - Create sub tree. Use only public
+a = master_sub.subkey_for_path("0H/1.pub")
+print_key_info(a)
+
+account2 = Account('Maja','Lekanovic','majasusa@hotmail.com', a)
+account2.generate_key()
+account2.generate_key()
+account2.generate_key()
+account2.generate_key()
+account2.wallet_info()
+print ""
+for i in range(0,5):
+    path = "0H/1/%d" % i
+    print master_sub.subkey_for_path(path).address()
+
+print ""
+for i in range(0,5):
+    path = "%d" % i
+    print a.subkey_for_path(path).address()
+
+
+t = BIP32Node.from_text('xpub6DGWioViQ3yCcDoCWJtAnNQou1mfCUkdysa3ez4kRUjwdKya7ugogEz18VNu24tpXNTzBZnAwwofwt9Er2631SFtM7FHXeLg8TAMK3N5n3j')
+print_key_info(t)
+
+'''
 m0p1_1_2p = m0p1.subkey(i=2, is_hardened=True)
 pub_m0p1_1_2p = m0p1.subkey(i=2, as_private=False, is_hardened=True)
 
-'''
+
 output_dict, output_order = create_output(seed, master)
 dump_output(output_dict, output_order)
 
@@ -138,7 +193,6 @@ dump_output(output_dict, output_order)
 
 output_dict, output_order = create_output(seed, ssubkey)
 dump_output(output_dict, output_order)
-
 
 for key in master.subkeys("1H"):
     print key
