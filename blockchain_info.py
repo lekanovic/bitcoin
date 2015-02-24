@@ -22,3 +22,9 @@ class BlockChainInfo():
 		URL = "https://blockchain.info/q/getreceivedbyaddress/%s" % bitcoin_address
 		return int(urlopen(URL).read())
 
+	@staticmethod
+	def is_address_used(bitcoin_address):
+		"return has address been used in a transaction before"
+		URL = "https://blockchain.info/q/addressfirstseen/%s" % bitcoin_address
+		return int(urlopen(URL).read()) != 0
+
