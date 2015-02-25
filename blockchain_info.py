@@ -27,4 +27,3 @@ class BlockChainInfo():
 		"return has address been used in a transaction before"
 		URL = "https://blockchain.info/q/addressfirstseen/%s" % bitcoin_address
 		return int(urlopen(URL).read()) != 0
-

@@ -111,6 +111,10 @@ def BIP39_static_seed():
     seed = h2b('6ad72bdbc8b5c423cdc52be4b27352086b230879a0fd642bbbb19f5605941e3001eb70c6a53ea090f28d4b0e3033846b23ae2553c60a9618d7eb001c3aba2a30')    
     return seed, words
 
+def create_new_account(name, lastname, email, passwd, key):
+    user = Account(name, lastname, email, passwd, key)
+    print user.to_json()
+
 seed, words = BIP39_static_seed()
 
 print "Mnemonic:"
@@ -118,82 +122,29 @@ print words
 print "Seed:"
 print b2h(seed)
 
-grand_master = BIP32Node.from_master_secret(seed, netcode='BTC')
-'''
-print_key_info(seed, master)
+master = BIP32Node.from_master_secret(seed, netcode='BTC')
+#print_key_info(master)
 
-m0p = master.subkey(i=0, is_hardened=True)
-pub_m0p = master.subkey(i=0, is_hardened=True, as_private=False)
-print_key_info(seed, m0p)
+# Get account key path
+account_keys = master.subkey_for_path("44H/0H/0H.pub")
+#print_key_info(account_keys)
 
-#m0p1 = m0p.subkey(i=0)
-pub_m0p1 = m0p.subkey(i=0, as_private=False)
-print_key_info(seed, pub_m0p1)
+account1 = Account('Radovan','Lekanovic','lekanovic@gmail.com', 'password1', account_keys)
+#print_key_info(account_keys)
 
-account1 = Account('Radovan','Lekanovic','lekanovic@gmail.com',pub_m0p1.wallet_key(as_private=False))
+# Get account key path
+account_keys = master.subkey_for_path("44H/0H/1H.pub")
+#print_key_info(account_keys)
 
-#m0p2 = m0p.subkey(i=1)
-pub_m0p2 = m0p.subkey(i=1, as_private=False)
+account2 = Account('Maja','Lekanovic','majasusa@hotmail.com', 'password2', account_keys)
 
-account2 = Account('Maja','Lekanovic','majasusa@hotmail.com',pub_m0p2.wallet_key(as_private=False))
-
-account2.generate_key()
-account2.generate_key()
-account2.generate_key()
-account2.generate_key()
-
+print account2.to_json()
+print account1.to_json()
+#print master.subkey_for_path("44H/0H/0H/0/0").address()
 account1.wallet_info()
 account2.wallet_info()
-'''
 
-# Get master key path
-master = grand_master.subkey_for_path("")
-# Get sub master key path
-master_sub = master.subkey_for_path("0H")
-
-# Account 1 path - Create sub tree. Use only public
-a = master_sub.subkey_for_path("0H/0.pub")
-account1 = Account('Radovan','Lekanovic','lekanovic@gmail.com', a)
-account1.wallet_info()
-
-# Account 2 path - Create sub tree. Use only public
-a = master_sub.subkey_for_path("0H/1.pub")
-print_key_info(a)
-
-account2 = Account('Maja','Lekanovic','majasusa@hotmail.com', a)
-account2.generate_key()
-account2.generate_key()
-account2.generate_key()
-account2.generate_key()
-account2.wallet_info()
-print ""
-for i in range(0,5):
-    path = "0H/1/%d" % i
-    print master_sub.subkey_for_path(path).address()
-
-print ""
-for i in range(0,5):
-    path = "%d" % i
-    print a.subkey_for_path(path).address()
-
-
-t = BIP32Node.from_text('xpub6DGWioViQ3yCcDoCWJtAnNQou1mfCUkdysa3ez4kRUjwdKya7ugogEz18VNu24tpXNTzBZnAwwofwt9Er2631SFtM7FHXeLg8TAMK3N5n3j')
+# Recreate account_keys. Using the xpub address we can create
+# all the account public keys.
+t = BIP32Node.from_text('xpub661MyMwAqRbcFoBYLHdXxaBao1pAZhopxEa2v8yJno9KLVz5aBWRhYr5FTMUibk2Zm16XbEpiodB6Lygsiuq9uFvJA3YUBpZ72fACHhNinv')
 print_key_info(t)
-
-'''
-m0p1_1_2p = m0p1.subkey(i=2, is_hardened=True)
-pub_m0p1_1_2p = m0p1.subkey(i=2, as_private=False, is_hardened=True)
-
-
-output_dict, output_order = create_output(seed, master)
-dump_output(output_dict, output_order)
-
-output_dict, output_order = create_output(seed, subkey)
-dump_output(output_dict, output_order)
-
-output_dict, output_order = create_output(seed, ssubkey)
-dump_output(output_dict, output_order)
-
-for key in master.subkeys("1H"):
-    print key
-'''
