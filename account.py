@@ -27,6 +27,9 @@ class Account():
 		m.update(msg)
 		return m.hexdigest()
 
+	def get_account_number(self):
+		return self.account_number
+
 	def get_bitcoin_address(self):
 		self.discovery()
 		return self.subkeys[-1]
@@ -61,6 +64,8 @@ class Account():
 			print "%s" % (k)
 
 	def to_json(self):
+		balance = self.wallet_balance()
 		return json.dumps({"name" : self.name, "lastname" : self.lastname,
 						   "email" : self.email, "passwd" : self.passwd,
-						   "account_number" : self.account_number}, indent=4)
+						   "account_number" : self.account_number,
+						   "wallet-balance" : balance}, indent=4)
