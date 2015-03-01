@@ -18,7 +18,7 @@ class Biteasy():
 	    	request = urllib2.Request(URL, headers={'User-Agent' : "Biteasy"})
 	    	blocks = json.load(urllib2.urlopen(request))
 	    except urllib2.HTTPError, error:
-	    	return -1
+	    	return 0
 	    return blocks['data']['balance']
 
 	@staticmethod
