@@ -4,6 +4,9 @@ from blockchain_info import BlockChainInfo
 import md5
 import json
 
+# Test BIP32 wallet
+# https://dcpos.github.io/bip39/
+
 class Account():
 
 	def __init__(self, name, lastname, email, passwd, bip32node):
@@ -14,22 +17,27 @@ class Account():
 		self.email = email
 		self.subkeys = []
 		self.index = 0
-		self.key_external = bip32node.subkey_for_path("0")
-		self.key_change = bip32node.subkey_for_path("1")
+		self.account_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
+
 		self.GAP_LIMIT = 5
 
-		self.account_number = self.create_account_number()
 		self.discovery()
 
-	def create_account_number(self):
-		"Hash name lastname and email, the hash will be the account number"
-		m = md5.new()
-		msg = self.name + self.lastname + self.email
-		m.update(msg)
-		return m.hexdigest()
+	def get_key_info(self, bip32node):
+		child_number = bip32node.child_index()
+		if child_number >= 0x80000000:
+			wc = child_number - 0x80000000
+			child_index = "%d" % wc
+		else:
+			child_index = "%d" % child_number
+
+		external = bip32node.subkey_for_path("0")
+		change = bip32node.subkey_for_path("1")
+
+		return child_index, external, change
 
 	def get_account_number(self):
-		return self.account_number
+		return self.account_index
 
 	def get_bitcoin_address(self):
 		self.discovery()
@@ -107,7 +115,7 @@ class Account():
 		balance = self.wallet_balance()
 		return json.dumps({"name" : self.name, "lastname" : self.lastname,
 						   "email" : self.email, "passwd" : self.passwd,
-						   "account_number" : self.account_number,
+						   "account_index" : self.account_index,
 						   "wallet-balance" : balance}, indent=4)
 
 
