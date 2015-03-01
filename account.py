@@ -16,6 +16,7 @@ class Account():
 		self.index = 0
 		self.key_external = bip32node.subkey_for_path("0")
 		self.key_change = bip32node.subkey_for_path("1")
+		self.GAP_LIMIT = 5
 
 		self.account_number = self.create_account_number()
 		self.discovery()
@@ -43,13 +44,52 @@ class Account():
 	def get_email(self):
 		return self.email
 
+	def __next_address(self, i):
+		index = 0
+		if type(i) == int:
+			index = str(i)
+		else:
+			index = i
+		k = self.key_external.subkey_for_path(index)
+		return k.address()
+
+	def __check_gap(self, index):
+		"""
+		Search for key that has previously been used in transactions. But
+		the search is only limited by the constant GAP_LIMIT. If there is
+		keys beyond that that has been used in transaction they will not be
+		found.
+
+		ref: http://bitcoin.stackexchange.com/questions/35555/
+			 what-does-it-mean-when-addresses-are-labelled-beyond-the-gap-limit-highlighted
+
+		Args:
+			index (int): index of key account
+
+		Returns:
+			bool: True if there was an address that has been previously used
+				  int the gap. False otherwise
+		"""
+		tmp = []
+		for i in range(index,index + self.GAP_LIMIT):
+			key = self.__next_address(i)
+			tmp.append(key)
+
+			if BlockChainInfo.is_address_used(key):
+				self.index += self.GAP_LIMIT
+				self.subkeys.extend(tmp)
+				return True
+
+		return False
+
 	def discovery(self):
 		while True:
-			key = self.key_external.subkey_for_path(str(self.index)).address()
+			key = self.__next_address(self.index)
 			self.subkeys.append(key)
-			self.index = self.index + 1
 			if not BlockChainInfo.is_address_used(key):
-				break
+				if not self.__check_gap(self.index):
+					break
+			self.index += 1
 
 	def wallet_balance(self):
 		total = 0
@@ -69,3 +109,5 @@ class Account():
 						   "email" : self.email, "passwd" : self.passwd,
 						   "account_number" : self.account_number,
 						   "wallet-balance" : balance}, indent=4)
+
+
