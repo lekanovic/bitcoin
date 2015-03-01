@@ -1,6 +1,7 @@
 
+from pycoin.convention import btc_to_satoshi, satoshi_to_btc
 from pycoin.key.BIP32Node import BIP32Node
-from blockchain_info import BlockChainInfo
+from biteasy import Biteasy
 import md5
 import json
 
@@ -9,7 +10,7 @@ import json
 
 class Account():
 
-	def __init__(self, name, lastname, email, passwd, bip32node):
+	def __init__(self, name, lastname, email, passwd, bip32node, network='mainnet'):
 		'extended_pub_key => BIP32Node object'
 		self.name = name
 		self.lastname = lastname
@@ -17,6 +18,7 @@ class Account():
 		self.email = email
 		self.subkeys = []
 		self.index = 0
+		self.network = network
 		self.account_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
 
 		self.GAP_LIMIT = 5
@@ -83,7 +85,7 @@ class Account():
 			key = self.__next_address(i)
 			tmp.append(key)
 
-			if BlockChainInfo.is_address_used(key):
+			if Biteasy.is_address_used(key, self.network):
 				self.index += self.GAP_LIMIT
 				self.subkeys.extend(tmp)
 				return True
@@ -94,7 +96,7 @@ class Account():
 		while True:
 			key = self.__next_address(self.index)
 			self.subkeys.append(key)
-			if not BlockChainInfo.is_address_used(key):
+			if not Biteasy.is_address_used(key, self.network):
 				if not self.__check_gap(self.index):
 					break
 			self.index += 1
@@ -102,12 +104,12 @@ class Account():
 	def wallet_balance(self):
 		total = 0
 		for k in self.subkeys:
-			total += BlockChainInfo.get_balance(k)
+			total += Biteasy.get_balance(k, self.network)
 		return total
 
 	def wallet_info(self):
 		balance = self.wallet_balance()
-		print "Account owner %s balance %d" % (self.name, balance)
+		print "Account owner %s balance %d Satoshi = %f BTC" % (self.name, balance, satoshi_to_btc(balance))
 		for k in self.subkeys:
 			print "%s" % (k)
 
