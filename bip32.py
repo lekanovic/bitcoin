@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 
 
+from pycoin.tx.tx_utils import create_tx, create_signed_tx
+from biteasy import Biteasy
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode
 from pycoin.serialize import b2h, h2b, h2b_rev
+from pycoin.tx.Spendable import Spendable
 from mnemonic import Mnemonic
 from account import Account
 import binascii
+
+# Testnet - Where to get free bitcoins
+# http://tpfaucet.appspot.com/
 
 def print_key_info(key, subkey_path=None):
     output_dict = {}
@@ -122,21 +128,29 @@ print words
 print "Seed:"
 print b2h(seed)
 
-master = BIP32Node.from_master_secret(seed, netcode='BTC')
+network = 'testnet'
+
+if network == "testnet":
+    netcode = 'XTN'
+elif network == "mainnet":
+    netcode == 'BTC'
+
+master = BIP32Node.from_master_secret(seed, netcode)
+#master = BIP32Node.from_master_secret(seed, netcode='BTC')
 #print_key_info(master)
 
 # Get account key path
 account_keys = master.subkey_for_path("44H/0H/0H.pub")
-#print_key_info(account_keys)
+print_key_info(account_keys)
 
-account1 = Account('Radovan','Lekanovic','lekanovic@gmail.com', 'password1', account_keys)
+account1 = Account('Radovan','Lekanovic','lekanovic@gmail.com', 'password1', account_keys, network)
 #print_key_info(account_keys)
 
 # Get account key path
 account_keys = master.subkey_for_path("44H/0H/1H.pub")
-#print_key_info(account_keys)
+print_key_info(account_keys)
 
-account2 = Account('Maja','Lekanovic','majasusa@hotmail.com', 'password2', account_keys)
+account2 = Account('Maja','Lekanovic','majasusa@hotmail.com', 'password2', account_keys, network)
 
 print account2.to_json()
 print account1.to_json()
@@ -146,5 +160,33 @@ account2.wallet_info()
 
 # Recreate account_keys. Using the xpub address we can create
 # all the account public keys.
-t = BIP32Node.from_text('xpub661MyMwAqRbcFoBYLHdXxaBao1pAZhopxEa2v8yJno9KLVz5aBWRhYr5FTMUibk2Zm16XbEpiodB6Lygsiuq9uFvJA3YUBpZ72fACHhNinv')
-print_key_info(t)
+#t = BIP32Node.from_text('xpub661MyMwAqRbcFoBYLHdXxaBao1pAZhopxEa2v8yJno9KLVz5aBWRhYr5FTMUibk2Zm16XbEpiodB6Lygsiuq9uFvJA3YUBpZ72fACHhNinv')
+#print_key_info(t)
+
+
+tmp = master.subkey_for_path("44H/0H/0H/0/0")
+print tmp.wif(use_uncompressed=False)
+print tmp.wallet_key(as_private=False)
+print_key_info(tmp)
+
+radd_pub = "mznx86o4aqnzYhYbwdNRwkoXaZN7a73NNH"
+radd_prv = ["cUhmqWVY7VaY3ErYh8CdGbeydKrLDWaBaSnrizjMREvzmkHBZvYY"]
+
+s = Biteasy.spendables_for_address(radd_pub, network)
+
+maja_account = ["mnPruvudEiLEcpASnpzGsS9mWSG86ehB4b"]
+
+
+tx = create_signed_tx(s,
+        ["mnPruvudEiLEcpASnpzGsS9mWSG86ehB4b"],
+        wifs=["cUhmqWVY7VaY3ErYh8CdGbeydKrLDWaBaSnrizjMREvzmkHBZvYY"],
+        fee=0.0001)
+
+
+'''
+tx = create_signed_tx(
+    Biteasy.spendables_for_address("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", network),
+    ["1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"],
+    wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"],
+    fee=0)
+'''
