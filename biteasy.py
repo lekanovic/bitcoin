@@ -60,7 +60,7 @@ class Biteasy():
 	    for tx_out_info in json_response.get("data", {}).get("outputs"):
 	        if tx_out_info.get("to_address") == bitcoin_address:
 	            coin_value = tx_out_info["value"]
-	            script = tools.compile(tx_out_info.get("script_pub_key"))
+	            script = tools.compile(tx_out_info.get("script_pub_key_string"))
 	            previous_hash = h2b_rev(tx_out_info.get("transaction_hash"))
 	            previous_index = tx_out_info.get("transaction_index")
 	            spendables.append(Spendable(coin_value, script, previous_hash, previous_index))
