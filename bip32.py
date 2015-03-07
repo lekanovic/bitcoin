@@ -7,9 +7,13 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode
 from pycoin.serialize import b2h, h2b, h2b_rev
 from pycoin.tx.Spendable import Spendable
+from insight import send_tx
 from mnemonic import Mnemonic
 from account import Account
 import binascii
+
+import urllib
+import urllib2
 
 # Testnet - Where to get free bitcoins
 # http://tpfaucet.appspot.com/
@@ -141,52 +145,90 @@ master = BIP32Node.from_master_secret(seed, netcode)
 
 # Get account key path
 account_keys = master.subkey_for_path("44H/0H/0H.pub")
-print_key_info(account_keys)
+#print_key_info(account_keys)
 
-account1 = Account('Radovan','Lekanovic','lekanovic@gmail.com', 'password1', account_keys, network)
+radde_account = Account('Radovan','Lekanovic','lekanovic@gmail.com', 'password1', account_keys, network)
 #print_key_info(account_keys)
 
 # Get account key path
 account_keys = master.subkey_for_path("44H/0H/1H.pub")
 print_key_info(account_keys)
 
-account2 = Account('Maja','Lekanovic','majasusa@hotmail.com', 'password2', account_keys, network)
+maja_account = Account('Maja','Lekanovic','majasusa@hotmail.com', 'password2', account_keys, network)
 
-print account2.to_json()
-print account1.to_json()
+print maja_account.to_json()
+print radde_account.to_json()
 #print master.subkey_for_path("44H/0H/0H/0/0").address()
-account1.wallet_info()
-account2.wallet_info()
+radde_account.wallet_info()
+maja_account.wallet_info()
 
 # Recreate account_keys. Using the xpub address we can create
 # all the account public keys.
 #t = BIP32Node.from_text('xpub661MyMwAqRbcFoBYLHdXxaBao1pAZhopxEa2v8yJno9KLVz5aBWRhYr5FTMUibk2Zm16XbEpiodB6Lygsiuq9uFvJA3YUBpZ72fACHhNinv')
 #print_key_info(t)
 
-
-tmp = master.subkey_for_path("44H/0H/0H/0/0")
-print tmp.wif(use_uncompressed=False)
-print tmp.wallet_key(as_private=False)
-print_key_info(tmp)
-
-radd_pub = "mznx86o4aqnzYhYbwdNRwkoXaZN7a73NNH"
-radd_prv = ["cUhmqWVY7VaY3ErYh8CdGbeydKrLDWaBaSnrizjMREvzmkHBZvYY"]
-
-s = Biteasy.spendables_for_address(radd_pub, network)
-
-maja_account = ["mnPruvudEiLEcpASnpzGsS9mWSG86ehB4b"]
+radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=0.12)
+maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=0.12)
 
 
-tx = create_signed_tx(s,
-        ["mnPruvudEiLEcpASnpzGsS9mWSG86ehB4b"],
-        wifs=["cUhmqWVY7VaY3ErYh8CdGbeydKrLDWaBaSnrizjMREvzmkHBZvYY"],
-        fee=0.0001)
+# This will generate private keys for the two accounts
+def get_priv_key(account, index):
+    p1 = "44H/0H/%dH/0/%d" % (account, index)
+    return master.subkey_for_path(p1).wif(use_uncompressed=False)
 
+#print radde_account.get_bitcoin_address()
+#print maja_account.get_bitcoin_address()
+
+def radde_send_maja(pub, priv, to_addr, amount=0.01):
+    radd_pub = pub
+    radd_prv = [priv]
+    balance = Biteasy.get_balance(pub, network="testnet")
+    print "%s %s %d" % (pub, priv, balance)
+    s = Biteasy.spendables_for_address(radd_pub, network)
+
+    tx = create_signed_tx(s,
+            [to_addr],
+            wifs=radd_prv,
+            fee=0.0001)
+    print tx.as_hex()
+    return tx.as_hex()
+
+def maja_send_radde(pub, priv, to_addr, amount=0.01):
+    maja_pub = pub
+    maja_prv = [priv]
+    balance = Biteasy.get_balance(pub, network="testnet")
+    print "%s %s %d" % (pub, priv, balance)
+    s = Biteasy.spendables_for_address(maja_pub, network)
+
+    print s
+    tx = create_signed_tx(s,
+            [to_addr],
+            wifs=maja_prv,
+            fee=0.0001)
+
+    print tx.as_hex()
+    return tx.as_hex()
+
+
+index = (len(radde_account.get_all_pub_keys()) - 2)
+print index
+tx = radde_send_maja(
+    radde_account.get_bitcoin_address(),
+    get_priv_key(0, index),
+    maja_account.get_bitcoin_address(),
+    amount=0.25)
+
+send_tx(tx)
 
 '''
-tx = create_signed_tx(
-    Biteasy.spendables_for_address("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", network),
-    ["1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"],
-    wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"],
-    fee=0)
+index = 1
+
+tx = maja_send_radde(
+    "n3Mx326UYHWNK4qrJj7DYoAWAsNp1fn7sg",
+    get_priv_key(1,index),
+    radde_account.get_bitcoin_address(),
+    amount=0.25)
+
+send_tx(tx)
+
 '''

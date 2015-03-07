@@ -38,6 +38,9 @@ class Account():
 
 		return child_index, external, change
 
+	def get_all_pub_keys(self):
+		return self.subkeys
+
 	def get_account_number(self):
 		return self.account_index
 
@@ -119,5 +122,13 @@ class Account():
 						   "email" : self.email, "passwd" : self.passwd,
 						   "account_index" : self.account_index,
 						   "wallet-balance" : balance}, indent=4)
+
+	# http://bitcoin.stackexchange.com/questions/1077/what-is-the-coin-selection-algorithm
+	def pay_to_address(self, to_addr, amount):
+		for addr in self.subkeys:
+			print "Addr: %s" % addr
+			spendable = Biteasy.spendables_for_address(addr, self.network)
+			for s in spendable:
+				print "Spendable: %s" % s.coin_value
 
 
