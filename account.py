@@ -1,7 +1,7 @@
 
 from pycoin.convention import btc_to_satoshi, satoshi_to_btc
 from pycoin.key.BIP32Node import BIP32Node
-from biteasy import Biteasy
+from pycoin.services.insight import InsightService
 import md5
 import json
 
@@ -19,6 +19,7 @@ class Account():
 		self.subkeys = []
 		self.index = 0
 		self.network = network
+		self.insight = InsightService("http://localhost:3001")
 		self.account_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
 
 		self.GAP_LIMIT = 5
@@ -88,7 +89,7 @@ class Account():
 			key = self.__next_address(i)
 			tmp.append(key)
 
-			if Biteasy.is_address_used(key, self.network):
+			if self.insight.is_address_used(key):
 				self.index += self.GAP_LIMIT
 				self.subkeys.extend(tmp)
 				return True
@@ -99,15 +100,15 @@ class Account():
 		while True:
 			key = self.__next_address(self.index)
 			self.subkeys.append(key)
-			if not Biteasy.is_address_used(key, self.network):
+			if not self.insight.is_address_used(key):
 				if not self.__check_gap(self.index):
 					break
 			self.index += 1
 
 	def wallet_balance(self):
 		total = 0
-		for k in self.subkeys:
-			total += Biteasy.get_balance(k, self.network)
+		for s in self.insight.spendables_for_addresses(self.subkeys):
+			total += s.coin_value
 		return total
 
 	def wallet_info(self):
@@ -127,8 +128,6 @@ class Account():
 	def pay_to_address(self, to_addr, amount):
 		for addr in self.subkeys:
 			print "Addr: %s" % addr
-			spendable = Biteasy.spendables_for_address(addr, self.network)
+			spendable = self.insight.spendables_for_address(addr)
 			for s in spendable:
 				print "Spendable: %s" % s.coin_value
-
-
