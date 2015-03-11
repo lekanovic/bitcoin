@@ -2,6 +2,8 @@
 from pycoin.convention import btc_to_satoshi, satoshi_to_btc
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.services.insight import InsightService
+from pycoin.tx.Tx import Tx
+from pycoin.tx.TxOut import TxOut, standard_tx_out_script
 import md5
 import json
 
@@ -146,8 +148,41 @@ class Account():
 	# http://bitcoin.stackexchange.com/questions/1077/what-is-the-coin-selection-algorithm
 	def pay_to_address(self, to_addr, amount):
 		print "Pay %d to %s" % (amount, to_addr)
-		spendable = self.insight.spendables_for_addresses(self.subkeys)
+		spendables = self.insight.spendables_for_addresses(self.subkeys)
 
-		to_spend, change = self.__greedy(spendable, amount)
+		to_spend, change = self.__greedy(spendables, amount)
 
 		print "The change is %d" % change
+
+		txs_in = [spendable.tx_in() for spendable in to_spend]
+
+		for t in txs_in:
+			print t
+
+		txs_out = []
+
+		# Send bitcoin to the addess 'to_addr'
+		script = standard_tx_out_script(to_addr)
+		txs_out.append(TxOut(amount, script))
+
+		# Return the change back to our wallet
+		script = standard_tx_out_script(self.key_change.address())
+		txs_out.append(TxOut(change, script))
+
+		tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out, lock_time=0)
+		tx.set_unspents(spendables)
+
+		print_tx(tx)
+		# Need to sign first before we can spend
+		#self.insight.send_tx(tx)
+
+# This just an temporary function and should be
+# removed later.
+def print_tx(tx):
+	import io
+	from pycoin.serialize import b2h
+	s = io.BytesIO()
+	tx.stream(s)
+	tx_as_hex = b2h(s.getvalue())
+
+	print tx_as_hex
