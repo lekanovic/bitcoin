@@ -124,10 +124,30 @@ class Account():
 						   "account_index" : self.account_index,
 						   "wallet-balance" : balance}, indent=4)
 
+	def __greedy(self, spendable, amount):
+		lesser = [utxo for utxo in spendable if utxo.coin_value < amount]
+		greater =  [utxo for utxo in spendable if utxo.coin_value >= amount]
+		key_func = lambda utxo: utxo.coin_value
+		if greater:
+			min_greater = min(greater)
+			change = min_greater.coin_value - amount
+			return [min_greater], change
+		lesser.sort(key=key_func, reverse=True)
+		result = []
+		accum = 0
+		for utxo in lesser:
+			result.append(utxo)
+			accum += utxo.coin_value
+			if accum >= amount:
+				change = accum - amount
+				return result, "Change: %d Satoshis" % chang
+		return None, 0
+
 	# http://bitcoin.stackexchange.com/questions/1077/what-is-the-coin-selection-algorithm
 	def pay_to_address(self, to_addr, amount):
-		for addr in self.subkeys:
-			print "Addr: %s" % addr
-			spendable = self.insight.spendables_for_address(addr)
-			for s in spendable:
-				print "Spendable: %s" % s.coin_value
+		print "Pay %d to %s" % (amount, to_addr)
+		spendable = self.insight.spendables_for_addresses(self.subkeys)
+
+		to_spend, change = self.__greedy(spendable, amount)
+
+		print "The change is %d" % change
