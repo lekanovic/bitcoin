@@ -167,8 +167,9 @@ maja_account.wallet_info()
 #t = BIP32Node.from_text('xpub661MyMwAqRbcFoBYLHdXxaBao1pAZhopxEa2v8yJno9KLVz5aBWRhYr5FTMUibk2Zm16XbEpiodB6Lygsiuq9uFvJA3YUBpZ72fACHhNinv')
 #print_key_info(t)
 
-radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=0.12)
-maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=0.12)
+radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=12000000)
+
+#maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=12000000)
 
 
 # This will generate private keys for the two accounts
@@ -209,7 +210,7 @@ def maja_send_radde(pub, priv, to_addr, amount=0.01):
     print tx.as_hex()
     return tx.as_hex()
 
-
+'''
 index = (len(radde_account.get_all_pub_keys()) - 2)
 print index
 tx = radde_send_maja(
@@ -220,7 +221,7 @@ tx = radde_send_maja(
 
 send_tx(tx)
 
-'''
+
 index = 1
 
 tx = maja_send_radde(
