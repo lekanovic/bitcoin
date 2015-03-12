@@ -193,13 +193,14 @@ class Account():
 		return None, 0
 
 	# http://bitcoin.stackexchange.com/questions/1077/what-is-the-coin-selection-algorithm
-	def pay_to_address(self, to_addr, amount):
+	def pay_to_address(self, to_addr, amount, fee=10000):
 		print "Pay %d to %s" % (amount, to_addr)
 		spendables = self.insight.spendables_for_addresses(self.__get_all_keys())
 
 		to_spend, change = self.__greedy(spendables, amount)
 
 		print "The change is %d" % change
+		change -= fee
 
 		if to_spend is None:
 			return None
@@ -216,8 +217,9 @@ class Account():
 		txs_out.append(TxOut(change, script))
 
 		tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out, lock_time=0)
-		tx.set_unspents(spendables)
+		tx.set_unspents(to_spend)
 
+		print "Transaction fee %d" % tx.fee()
 		#print_tx(tx)
 
 		return tx
