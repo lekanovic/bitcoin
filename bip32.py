@@ -125,6 +125,11 @@ def create_new_account(name, lastname, email, passwd, key):
     user = Account(name, lastname, email, passwd, key)
     print user.to_json()
 
+# This will generate private keys for the two accounts
+def get_priv_key(account, index):
+    p1 = "44H/0H/%dH/0/%d" % (account, index)
+    return master.subkey_for_path(p1).wif(use_uncompressed=False)
+
 seed, words = BIP39_static_seed()
 
 print "Mnemonic:"
@@ -167,69 +172,20 @@ maja_account.wallet_info()
 #t = BIP32Node.from_text('xpub661MyMwAqRbcFoBYLHdXxaBao1pAZhopxEa2v8yJno9KLVz5aBWRhYr5FTMUibk2Zm16XbEpiodB6Lygsiuq9uFvJA3YUBpZ72fACHhNinv')
 #print_key_info(t)
 
-radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=12000000)
+tx_unsigned = radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=12000000)
+
+if tx_unsigned is None:
+    print "Insufficient funds cannot perform transaction"
+    exit(1)
+
+wifs=[]
+for i in range(0, int(radde_account.index)):
+    priv_key = get_priv_key(int(radde_account.account_index), i)
+    wifs.append(priv_key)
+    print priv_key
+
+print priv_key
+
+radde_account.sign(tx_unsigned, wifs)
 
 #maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=12000000)
-
-
-# This will generate private keys for the two accounts
-def get_priv_key(account, index):
-    p1 = "44H/0H/%dH/0/%d" % (account, index)
-    return master.subkey_for_path(p1).wif(use_uncompressed=False)
-
-#print radde_account.get_bitcoin_address()
-#print maja_account.get_bitcoin_address()
-
-def radde_send_maja(pub, priv, to_addr, amount=0.01):
-    radd_pub = pub
-    radd_prv = [priv]
-    balance = Biteasy.get_balance(pub, network="testnet")
-    print "%s %s %d" % (pub, priv, balance)
-    s = Biteasy.spendables_for_address(radd_pub, network)
-
-    tx = create_signed_tx(s,
-            [to_addr],
-            wifs=radd_prv,
-            fee=0.0001)
-    print tx.as_hex()
-    return tx.as_hex()
-
-def maja_send_radde(pub, priv, to_addr, amount=0.01):
-    maja_pub = pub
-    maja_prv = [priv]
-    balance = Biteasy.get_balance(pub, network="testnet")
-    print "%s %s %d" % (pub, priv, balance)
-    s = Biteasy.spendables_for_address(maja_pub, network)
-
-    print s
-    tx = create_signed_tx(s,
-            [to_addr],
-            wifs=maja_prv,
-            fee=0.0001)
-
-    print tx.as_hex()
-    return tx.as_hex()
-
-'''
-index = (len(radde_account.get_all_pub_keys()) - 2)
-print index
-tx = radde_send_maja(
-    radde_account.get_bitcoin_address(),
-    get_priv_key(0, index),
-    maja_account.get_bitcoin_address(),
-    amount=0.25)
-
-send_tx(tx)
-
-
-index = 1
-
-tx = maja_send_radde(
-    "n3Mx326UYHWNK4qrJj7DYoAWAsNp1fn7sg",
-    get_priv_key(1,index),
-    radde_account.get_bitcoin_address(),
-    amount=0.25)
-
-send_tx(tx)
-
-'''
