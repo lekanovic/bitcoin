@@ -136,7 +136,7 @@ class Account():
 	def wallet_balance(self):
 		total = 0
 		# Check the wallet for spendables
-		for s in self.insight.spendables_for_addresses(self.subkeys):
+		for s in self.insight.spendables_for_addresses(self.__get_all_keys()):
 			total += s.coin_value
 		return total
 
@@ -152,6 +152,11 @@ class Account():
 						   "email" : self.email, "passwd" : self.passwd,
 						   "account_index" : self.account_index,
 						   "wallet-balance" : balance}, indent=4)
+
+	def __get_all_keys(self):
+		# Get all of the key's in wallet. But don't forget the change key
+		all_keys = [self.key_change.address()] + self.subkeys
+		return all_keys
 
 	def __greedy(self, spendable, amount):
 		lesser = [utxo for utxo in spendable if utxo.coin_value < amount]
@@ -175,7 +180,7 @@ class Account():
 	# http://bitcoin.stackexchange.com/questions/1077/what-is-the-coin-selection-algorithm
 	def pay_to_address(self, to_addr, amount):
 		print "Pay %d to %s" % (amount, to_addr)
-		spendables = self.insight.spendables_for_addresses(self.subkeys)
+		spendables = self.insight.spendables_for_addresses(self.__get_all_keys())
 
 		to_spend, change = self.__greedy(spendables, amount)
 
