@@ -18,6 +18,9 @@ import urllib2
 # Testnet - Where to get free bitcoins
 # http://tpfaucet.appspot.com/
 
+# Test bitcoin addresses
+# https://dcpos.github.io/bip39/
+
 def print_key_info(key, subkey_path=None):
     output_dict = {}
     output_order = []
@@ -127,7 +130,11 @@ def create_new_account(name, lastname, email, passwd, key):
 
 # This will generate private keys for the two accounts
 def get_priv_key(account, index):
-    p1 = "44H/0H/%dH/0/%d" % (account, index)
+    p1 = "44H/1H/%dH/0/%d" % (account, index)
+    return master.subkey_for_path(p1).wif(use_uncompressed=False)
+
+def get_priv_change_key(account):
+    p1 = "44H/1H/%dH/1/0" % (account)
     return master.subkey_for_path(p1).wif(use_uncompressed=False)
 
 seed, words = BIP39_static_seed()
@@ -141,22 +148,24 @@ network = 'testnet'
 
 if network == "testnet":
     netcode = 'XTN'
+    key_path = "44H/1H/"
 elif network == "mainnet":
-    netcode == 'BTC'
+    netcode = 'BTC'
+    key_path = "44H/0H/"
 
 master = BIP32Node.from_master_secret(seed, netcode)
 #master = BIP32Node.from_master_secret(seed, netcode='BTC')
 #print_key_info(master)
 
 # Get account key path
-account_keys = master.subkey_for_path("44H/0H/0H.pub")
+account_keys = master.subkey_for_path( (key_path + "0H.pub") )
 #print_key_info(account_keys)
 
 radde_account = Account('Radovan','Lekanovic','lekanovic@gmail.com', 'password1', account_keys, network)
 #print_key_info(account_keys)
 
 # Get account key path
-account_keys = master.subkey_for_path("44H/0H/1H.pub")
+account_keys = master.subkey_for_path( (key_path + "1H.pub") )
 print_key_info(account_keys)
 
 maja_account = Account('Maja','Lekanovic','majasusa@hotmail.com', 'password2', account_keys, network)
@@ -184,7 +193,9 @@ for i in range(0, int(radde_account.index)):
     wifs.append(priv_key)
     print priv_key
 
+priv_key = get_priv_change_key(int(radde_account.account_index))
 print priv_key
+wifs.append(priv_key)
 
 radde_account.sign(tx_unsigned, wifs)
 
