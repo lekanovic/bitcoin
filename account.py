@@ -4,8 +4,34 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.services.insight import InsightService
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
+from pycoin.encoding import wif_to_secret_exponent
+from pycoin.tx.pay_to import build_hash160_lookup
 import md5
 import json
+
+
+class LazySecretExponentDB(object):
+    """
+    The pycoin pure python implementation that converts secret exponents
+    into public pairs is very slow, so this class does the conversion lazily
+    and caches the results to optimize for the case of a large number
+    of secret exponents.
+    """
+    def __init__(self, wif_iterable, secret_exponent_db_cache):
+        self.wif_iterable = iter(wif_iterable)
+        self.secret_exponent_db_cache = secret_exponent_db_cache
+
+    def get(self, v):
+        if v in self.secret_exponent_db_cache:
+            return self.secret_exponent_db_cache[v]
+        for wif in self.wif_iterable:
+            secret_exponent = wif_to_secret_exponent(wif)
+            d = build_hash160_lookup([secret_exponent])
+            self.secret_exponent_db_cache.update(d)
+            if v in self.secret_exponent_db_cache:
+                return self.secret_exponent_db_cache[v]
+        self.wif_iterable = []
+        return None
 
 # Test BIP32 wallet
 # https://dcpos.github.io/bip39/
@@ -109,6 +135,7 @@ class Account():
 
 	def wallet_balance(self):
 		total = 0
+		# Check the wallet for spendables
 		for s in self.insight.spendables_for_addresses(self.subkeys):
 			total += s.coin_value
 		return total
@@ -154,10 +181,10 @@ class Account():
 
 		print "The change is %d" % change
 
-		txs_in = [spendable.tx_in() for spendable in to_spend]
+		if to_spend is None:
+			return None
 
-		for t in txs_in:
-			print t
+		txs_in = [spendable.tx_in() for spendable in to_spend]
 
 		txs_out = []
 
@@ -172,9 +199,17 @@ class Account():
 		tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out, lock_time=0)
 		tx.set_unspents(spendables)
 
-		print_tx(tx)
-		# Need to sign first before we can spend
-		#self.insight.send_tx(tx)
+		#print_tx(tx)
+
+		return tx
+
+	def sign(self, tx, wifs):
+		tx_signed = tx.sign(LazySecretExponentDB(wifs, {}))
+		print_tx(tx_signed)
+
+		# Send the transaction to network.
+		self.insight.send_tx(tx_signed)
+
 
 # This just an temporary function and should be
 # removed later.
