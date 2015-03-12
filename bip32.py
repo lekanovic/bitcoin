@@ -129,12 +129,18 @@ def create_new_account(name, lastname, email, passwd, key):
     print user.to_json()
 
 # This will generate private keys for the two accounts
-def get_priv_key(account, index):
-    p1 = "44H/1H/%dH/0/%d" % (account, index)
+def get_priv_key(account, index, network="testnet"):
+    if network == "testnet":
+        p1 = "44H/1H/%dH/0/%d" % (account, index)
+    elif network == "mainnet":
+        p1 = "44H/0H/%dH/0/%d" % (account, index)
     return master.subkey_for_path(p1).wif(use_uncompressed=False)
 
-def get_priv_change_key(account):
-    p1 = "44H/1H/%dH/1/0" % (account)
+def get_priv_change_key(account, network="testnet"):
+    if network == "testnet":
+        p1 = "44H/1H/%dH/1" % (account)
+    elif network == "mainnet":
+        p1 = "44H/0H/%dH/1" % (account)
     return master.subkey_for_path(p1).wif(use_uncompressed=False)
 
 seed, words = BIP39_static_seed()
@@ -181,7 +187,8 @@ maja_account.wallet_info()
 #t = BIP32Node.from_text('xpub661MyMwAqRbcFoBYLHdXxaBao1pAZhopxEa2v8yJno9KLVz5aBWRhYr5FTMUibk2Zm16XbEpiodB6Lygsiuq9uFvJA3YUBpZ72fACHhNinv')
 #print_key_info(t)
 
-tx_unsigned = radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=12000000)
+'''
+tx_unsigned = radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=1000000)
 
 if tx_unsigned is None:
     print "Insufficient funds cannot perform transaction"
@@ -198,5 +205,22 @@ print priv_key
 wifs.append(priv_key)
 
 radde_account.sign(tx_unsigned, wifs)
+'''
+exit(1)
+tx_unsigned = maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=49000000)
 
-#maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=12000000)
+if tx_unsigned is None:
+    print "Insufficient funds cannot perform transaction"
+    exit(1)
+
+wifs=[]
+for i in range(0, int(maja_account.index)):
+    priv_key = get_priv_key(int(maja_account.account_index), i)
+    wifs.append(priv_key)
+    print priv_key
+
+priv_key = get_priv_change_key(int(maja_account.account_index))
+print priv_key
+wifs.append(priv_key)
+
+maja_account.sign(tx_unsigned, wifs)
