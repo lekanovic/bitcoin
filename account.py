@@ -148,10 +148,25 @@ class Account():
 
 	def to_json(self):
 		balance = self.wallet_balance()
+		key_amount=[]
+		amount=0
+		for s in self.subkeys:
+			spendable = self.insight.spendables_for_address(s)
+			amount=0
+			for a in spendable:
+				amount += a.coin_value
+			key_amount.append( (s + ":" + str(amount)))
+
+		amount=0
+		for a in self.insight.spendables_for_address(self.key_change.address()):
+			amount += a.coin_value
+		key_amount.append( ("change:" + self.key_change.address() + ":" + str(amount)))
+
 		return json.dumps({"name" : self.name, "lastname" : self.lastname,
 						   "email" : self.email, "passwd" : self.passwd,
 						   "account_index" : self.account_index,
-						   "wallet-balance" : balance}, indent=4)
+						   "wallet-balance" : balance,
+						   "spendable" : key_amount}, indent=4)
 
 	def __get_all_keys(self):
 		# Get all of the key's in wallet. But don't forget the change key
@@ -174,7 +189,7 @@ class Account():
 			accum += utxo.coin_value
 			if accum >= amount:
 				change = accum - amount
-				return result, "Change: %d Satoshis" % chang
+				return result, change
 		return None, 0
 
 	# http://bitcoin.stackexchange.com/questions/1077/what-is-the-coin-selection-algorithm
@@ -192,7 +207,6 @@ class Account():
 		txs_in = [spendable.tx_in() for spendable in to_spend]
 
 		txs_out = []
-
 		# Send bitcoin to the addess 'to_addr'
 		script = standard_tx_out_script(to_addr)
 		txs_out.append(TxOut(amount, script))
