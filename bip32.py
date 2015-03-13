@@ -172,15 +172,15 @@ radde_account = Account('Radovan','Lekanovic','lekanovic@gmail.com', 'password1'
 
 # Get account key path
 account_keys = master.subkey_for_path( (key_path + "1H.pub") )
-print_key_info(account_keys)
+#print_key_info(account_keys)
 
 maja_account = Account('Maja','Lekanovic','majasusa@hotmail.com', 'password2', account_keys, network)
 
 print maja_account.to_json()
 print radde_account.to_json()
 #print master.subkey_for_path("44H/0H/0H/0/0").address()
-radde_account.wallet_info()
-maja_account.wallet_info()
+#radde_account.wallet_info()
+#maja_account.wallet_info()
 
 # Recreate account_keys. Using the xpub address we can create
 # all the account public keys.
@@ -188,7 +188,7 @@ maja_account.wallet_info()
 #print_key_info(t)
 
 '''
-tx_unsigned = radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=1000000)
+tx_unsigned = radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=70000)
 
 if tx_unsigned is None:
     print "Insufficient funds cannot perform transaction"
@@ -206,8 +206,8 @@ wifs.append(priv_key)
 
 radde_account.sign(tx_unsigned, wifs)
 '''
-exit(1)
-tx_unsigned = maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=49000000)
+
+tx_unsigned = maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=23000)
 
 if tx_unsigned is None:
     print "Insufficient funds cannot perform transaction"
