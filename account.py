@@ -200,7 +200,9 @@ class Account():
 		to_spend, change = self.__greedy(spendables, amount)
 
 		print "The change is %d" % change
-		change -= fee
+
+		if change > fee:
+			change -= fee
 
 		if to_spend is None:
 			return None
