@@ -7,6 +7,8 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode
 from pycoin.serialize import b2h, h2b, h2b_rev
 from pycoin.tx.Spendable import Spendable
+from pycoin.encoding import wif_to_secret_exponent
+from pycoin.tx.pay_to import build_hash160_lookup
 from insight import send_tx
 from mnemonic import Mnemonic
 from account import Account
@@ -14,6 +16,29 @@ import binascii
 
 import urllib
 import urllib2
+
+class LazySecretExponentDB(object):
+    """
+    The pycoin pure python implementation that converts secret exponents
+    into public pairs is very slow, so this class does the conversion lazily
+    and caches the results to optimize for the case of a large number
+    of secret exponents.
+    """
+    def __init__(self, wif_iterable, secret_exponent_db_cache):
+        self.wif_iterable = iter(wif_iterable)
+        self.secret_exponent_db_cache = secret_exponent_db_cache
+
+    def get(self, v):
+        if v in self.secret_exponent_db_cache:
+            return self.secret_exponent_db_cache[v]
+        for wif in self.wif_iterable:
+            secret_exponent = wif_to_secret_exponent(wif)
+            d = build_hash160_lookup([secret_exponent])
+            self.secret_exponent_db_cache.update(d)
+            if v in self.secret_exponent_db_cache:
+                return self.secret_exponent_db_cache[v]
+        self.wif_iterable = []
+        return None
 
 # Testnet - Where to get free bitcoins
 # http://tpfaucet.appspot.com/
@@ -188,7 +213,7 @@ print radde_account.to_json()
 #print_key_info(t)
 
 '''
-tx_unsigned = radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=70000)
+tx_unsigned = radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=67000)
 
 if tx_unsigned is None:
     print "Insufficient funds cannot perform transaction"
@@ -198,16 +223,17 @@ wifs=[]
 for i in range(0, int(radde_account.index)):
     priv_key = get_priv_key(int(radde_account.account_index), i)
     wifs.append(priv_key)
-    print priv_key
 
 priv_key = get_priv_change_key(int(radde_account.account_index))
-print priv_key
 wifs.append(priv_key)
 
-radde_account.sign(tx_unsigned, wifs)
+tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
+
+radde_account.send_tx(tx_signed)
+
 '''
 
-tx_unsigned = maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=23000)
+tx_unsigned = maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=450000)
 
 if tx_unsigned is None:
     print "Insufficient funds cannot perform transaction"
@@ -217,10 +243,10 @@ wifs=[]
 for i in range(0, int(maja_account.index)):
     priv_key = get_priv_key(int(maja_account.account_index), i)
     wifs.append(priv_key)
-    print priv_key
 
 priv_key = get_priv_change_key(int(maja_account.account_index))
-print priv_key
 wifs.append(priv_key)
 
-maja_account.sign(tx_unsigned, wifs)
+tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
+
+maja_account.send_tx(tx_signed)

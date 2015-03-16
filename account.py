@@ -4,34 +4,9 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.services.insight import InsightService
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
-from pycoin.encoding import wif_to_secret_exponent
-from pycoin.tx.pay_to import build_hash160_lookup
 import md5
 import json
 
-
-class LazySecretExponentDB(object):
-    """
-    The pycoin pure python implementation that converts secret exponents
-    into public pairs is very slow, so this class does the conversion lazily
-    and caches the results to optimize for the case of a large number
-    of secret exponents.
-    """
-    def __init__(self, wif_iterable, secret_exponent_db_cache):
-        self.wif_iterable = iter(wif_iterable)
-        self.secret_exponent_db_cache = secret_exponent_db_cache
-
-    def get(self, v):
-        if v in self.secret_exponent_db_cache:
-            return self.secret_exponent_db_cache[v]
-        for wif in self.wif_iterable:
-            secret_exponent = wif_to_secret_exponent(wif)
-            d = build_hash160_lookup([secret_exponent])
-            self.secret_exponent_db_cache.update(d)
-            if v in self.secret_exponent_db_cache:
-                return self.secret_exponent_db_cache[v]
-        self.wif_iterable = []
-        return None
 
 # Test BIP32 wallet
 # https://dcpos.github.io/bip39/
@@ -226,10 +201,8 @@ class Account():
 
 		return tx
 
-	def sign(self, tx, wifs):
-		tx_signed = tx.sign(LazySecretExponentDB(wifs, {}))
+	def send_tx(self, tx_signed):
 		print_tx(tx_signed)
-
 		# Send the transaction to network.
 		self.insight.send_tx(tx_signed)
 
