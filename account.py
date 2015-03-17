@@ -28,6 +28,7 @@ class Account():
 		self.account_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
 		self.public_key = bip32node.wallet_key(as_private=False)
 		self.GAP_LIMIT = 5
+		self.account_created = str( datetime.datetime.now() )
 
 		self.discovery()
 
@@ -146,7 +147,7 @@ class Account():
 							   "wallet-balance" : balance,
 							   "status": "active",
 							   "public_key": self.public_key,
-							   "date": str( datetime.datetime.now() ),
+							   "date": self.account_created,
 							   "spendable" : key_amount}, indent=4)
 		else:
 			return json.dumps({"name" : self.name, "lastname" : self.lastname,
@@ -155,7 +156,7 @@ class Account():
 							   "wallet-balance" : balance,
 							   "status": "active",
 							   "public_key": self.public_key,
-							   "date": str( datetime.datetime.now() )}, indent=4)
+							   "date": self.account_created}, indent=4)
 
 	def __get_all_keys(self):
 		# Get all of the key's in wallet. But don't forget the change key
