@@ -16,7 +16,6 @@ import json
 class Account():
 
 	def __init__(self, name, lastname, email, passwd, bip32node, network='mainnet'):
-		'extended_pub_key => BIP32Node object'
 		self.name = name
 		self.lastname = lastname
 		self.passwd = passwd
@@ -29,6 +28,24 @@ class Account():
 		self.public_key = bip32node.wallet_key(as_private=False)
 		self.GAP_LIMIT = 5
 		self.account_created = str( datetime.datetime.now() )
+
+		self.discovery()
+
+	def __init__(self, json, network="mainnet"):
+		self.name = json['name']
+		self.lastname = json['lastname']
+		self.passwd = json['passwd']
+		self.email = json['email']
+		self.subkeys = []
+		self.index = 0
+		self.network = network
+		self.insight = InsightService("http://localhost:3001")
+		self.public_key = json['public_key']
+		bip32node = BIP32Node.from_text(self.public_key)
+		self.account_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
+		self.GAP_LIMIT = 5
+		self.account_created = json['date']
+		self.status = json['status']
 
 		self.discovery()
 
