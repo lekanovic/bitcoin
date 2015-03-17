@@ -4,6 +4,8 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.services.insight import InsightService
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
+
+import datetime
 import md5
 import json
 
@@ -141,6 +143,8 @@ class Account():
 						   "email" : self.email, "passwd" : self.passwd,
 						   "account_index" : self.account_index,
 						   "wallet-balance" : balance,
+						   "status": "active",
+						   "date": str( datetime.datetime.now() ),
 						   "spendable" : key_amount}, indent=4)
 
 	def __get_all_keys(self):
