@@ -26,7 +26,7 @@ class Account():
 		self.network = network
 		self.insight = InsightService("http://localhost:3001")
 		self.account_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
-
+		self.public_key = bip32node.wallet_key(as_private=False)
 		self.GAP_LIMIT = 5
 
 		self.discovery()
@@ -123,29 +123,39 @@ class Account():
 		for k in self.subkeys:
 			print "%s" % (k)
 
-	def to_json(self):
+	def to_json(self, include_spendables=False):
 		balance = self.wallet_balance()
-		key_amount=[]
-		amount=0
-		for s in self.subkeys:
-			spendable = self.insight.spendables_for_address(s)
+		if include_spendables:
+			key_amount=[]
 			amount=0
-			for a in spendable:
+			for s in self.subkeys:
+				spendable = self.insight.spendables_for_address(s)
+				amount=0
+				for a in spendable:
+					amount += a.coin_value
+				key_amount.append( (s + ":" + str(amount)))
+
+			amount=0
+			for a in self.insight.spendables_for_address(self.key_change.address()):
 				amount += a.coin_value
-			key_amount.append( (s + ":" + str(amount)))
+			key_amount.append( ("change:" + self.key_change.address() + ":" + str(amount)))
 
-		amount=0
-		for a in self.insight.spendables_for_address(self.key_change.address()):
-			amount += a.coin_value
-		key_amount.append( ("change:" + self.key_change.address() + ":" + str(amount)))
-
-		return json.dumps({"name" : self.name, "lastname" : self.lastname,
-						   "email" : self.email, "passwd" : self.passwd,
-						   "account_index" : self.account_index,
-						   "wallet-balance" : balance,
-						   "status": "active",
-						   "date": str( datetime.datetime.now() ),
-						   "spendable" : key_amount}, indent=4)
+			return json.dumps({"name" : self.name, "lastname" : self.lastname,
+							   "email" : self.email, "passwd" : self.passwd,
+							   "account_index" : self.account_index,
+							   "wallet-balance" : balance,
+							   "status": "active",
+							   "public_key": self.public_key,
+							   "date": str( datetime.datetime.now() ),
+							   "spendable" : key_amount}, indent=4)
+		else:
+			return json.dumps({"name" : self.name, "lastname" : self.lastname,
+							   "email" : self.email, "passwd" : self.passwd,
+							   "account_index" : self.account_index,
+							   "wallet-balance" : balance,
+							   "status": "active",
+							   "public_key": self.public_key,
+							   "date": str( datetime.datetime.now() )}, indent=4)
 
 	def __get_all_keys(self):
 		# Get all of the key's in wallet. But don't forget the change key
