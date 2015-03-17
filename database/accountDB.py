@@ -57,7 +57,7 @@ class AccountsDB(object):
 	def drop_database(self):
 		self.db.account.drop()
 
-'''
+
 doc1 = {
 		"name": "Radovan",
 		"passwd": "password1",
@@ -66,6 +66,7 @@ doc1 = {
 		"wallet-balance": 47288000,
 		"email": "lekanovic@gmail.com",
 		"status": "active",
+		"public_key": "tpubDCVcrTzunZwuae4YJ9mZAvcxp5TSyKdWXnmc3XbYdGKHAkpvuUQ9Ks38LnGeBQj99pPNG2EPtLwe3GzaYfRrT67fhs54VQtuk2RzboTdnCS",
 		"date":  str( datetime.datetime.now() )
 		}
 
@@ -77,10 +78,11 @@ doc2 = {
 		"wallet-balance": 372000,
 		"email": "majasusa@hotmail.com",
 		"status": "active",
+		"public_key": "tpubDCVcrTzunZwuc67hSQHmjHN8efpCVw4aZDUqvztyryj8QDpsvjxipein85QKt3ZuWXGapnuYVBEUGyvAQMJBNpruqxqStQ5RdrLhRCzNtuc",
 		"date":  str( datetime.datetime.now() )
 		}
 
-
+'''
 a = AccountsDB()
 
 print a.add_account(doc1)
