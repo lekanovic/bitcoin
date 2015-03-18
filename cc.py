@@ -87,12 +87,9 @@ def main(argv):
 		to_email = s[1]
 		amount = int(s[2])
 
-		doc = {}
-		doc['email'] = from_email
-		sender = json.loads(db.find_account(doc))
+		sender = json.loads(db.find_account(from_email))
 
-		doc['email'] = to_email
-		receiver = json.loads(db.find_account(doc))
+		receiver = json.loads(db.find_account(to_email))
 
 		sender = Account.from_json(sender,network)
 		receiver = Account.from_json(receiver,network)
@@ -106,9 +103,7 @@ def main(argv):
 		sender.send_tx(tx_signed)
 
 	if args.find:
-		doc = {}
-		doc['email'] = args.find
-		res = db.find_account(doc)
+		res = db.find_account(args.find)
 		if res == "null":
 			print "email [%s] not found" % args.find
 		else:
