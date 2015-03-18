@@ -109,18 +109,20 @@ def main(argv):
 		doc = {}
 		doc['email'] = args.find
 		res = db.find_account(doc)
-
 		if res == "null":
 			print "email [%s] not found" % args.find
 		else:
-			print res
+			found = json.loads(res)
+			account = Account.from_json(found,network)
+			print account.to_json()
 
 	if args.delete:
 		db.drop_database()
 
 	if args.list:
 		for a in db.get_all_accounts():
-			print a
+			res = json.loads(a)
+			print  Account.from_json(res, network).to_json()
 
 	if args.add:
 		# split the name:lastname:email:password string
