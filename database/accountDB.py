@@ -21,10 +21,20 @@ class AccountsDB(object):
 		self.db = self.client.accountsDB
 
 	def add_account(self, account):
+		''' Add an account to the database
+
+			Args:
+				account (json dict):
+				User account information
+
+			Returns:
+				Bool: True if account was added, False if account alread exists
+		'''
 		res = self.find_account(account)
 		if res != None:
-			return "Account alread exists"
+			return False
 		self.db.account.insert(account)
+		return True
 
 	def update_balance(self, account, new_balance):
 		res = self.find_account(account)
