@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from bson.json_util import dumps
 import datetime
 import os
 
@@ -56,10 +57,10 @@ class AccountsDB(object):
 
 	def find_account(self, account):
 		res = self.db.account.find_one({"email" : account['email']})
-		return res
+		return dumps(res, indent=4)
 
 	def get_all_accounts(self):
-		return self.db.account.find()
+		return [dumps(account, indent=4) for account in self.db.account.find()]
 
 	def get_number_of_accounts(self):
 		return self.db.account.count()
