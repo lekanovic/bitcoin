@@ -4,6 +4,7 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.serialize import h2b
 from account import Account
 from database.accountDB import AccountsDB
+from bson.json_util import dumps
 
 def BIP39_static_seed():
     words = 'category fiscal fuel great review rather useful shop middle defense cube vacuum resource fiber special nurse chief category mask display bag echo concert click february fame tenant innocent affair usual hole soon bean adjust shoe voyage immune chest gaze chaos tip way glimpse sword tray craft blur seminar'
@@ -14,12 +15,17 @@ def main(argv):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-a","--add", help="Create new account: name:lastname:email:password")
 	parser.add_argument("-l","--list", action='store_true', help="List all accounts")
+	parser.add_argument("-d","--delete", action='store_true', help="Delete all accounts")
 	args = parser.parse_args()
 
+	db = AccountsDB()
+
+	if args.delete:
+		db.drop_database()
+
 	if args.list:
-		db = AccountsDB()
 		for a in db.get_all_accounts():
-			print a['email']
+			print dumps(a, indent=4)
 
 	if args.add:
 		# split the name:lastname:email:password string
@@ -27,8 +33,6 @@ def main(argv):
 
 		seed, words = BIP39_static_seed()
 		master = BIP32Node.from_master_secret(seed, netcode="XTN")
-
-		db = AccountsDB()
 
 		nr = db.get_number_of_accounts()
 		path = "44H/1H/" + "%dH.pub" % nr
