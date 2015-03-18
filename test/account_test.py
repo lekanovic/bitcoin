@@ -17,7 +17,7 @@ class AccountTestCase(unittest.TestCase):
 		doc['wallet-balance'] = 0
 		doc['email'] = "majasusa@hotmail.com"
 
-		account = Account(doc, network="testnet")
+		account = Account.from_json(doc, network="testnet")
 
 		self.assertEqual(account.name, "Maja")
 		self.assertEqual(account.lastname, "Lekanovic")
