@@ -16,16 +16,28 @@ def main(argv):
 	parser.add_argument("-a","--add", help="Create new account: name:lastname:email:password")
 	parser.add_argument("-l","--list", action='store_true', help="List all accounts")
 	parser.add_argument("-d","--delete", action='store_true', help="Delete all accounts")
+	parser.add_argument("-f","--find", help="Find account by email")
 	args = parser.parse_args()
 
 	db = AccountsDB()
+
+	if args.find:
+		doc = {}
+		doc['email'] = args.find
+		res = db.find_account(doc)
+
+		if res == "null":
+			print "email [%s] not found" % args.find
+		else:
+			print res
+
 
 	if args.delete:
 		db.drop_database()
 
 	if args.list:
 		for a in db.get_all_accounts():
-			print dumps(a, indent=4)
+			print a
 
 	if args.add:
 		# split the name:lastname:email:password string
