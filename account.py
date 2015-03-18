@@ -31,23 +31,15 @@ class Account():
 
 		self.discovery()
 
-	def __init__(self, json, network="mainnet"):
-		self.name = json['name']
-		self.lastname = json['lastname']
-		self.passwd = json['passwd']
-		self.email = json['email']
-		self.subkeys = []
-		self.index = 0
-		self.network = network
-		self.insight = InsightService("http://localhost:3001")
-		self.public_key = json['public_key']
-		bip32node = BIP32Node.from_text(self.public_key)
-		self.account_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
-		self.GAP_LIMIT = 5
-		self.account_created = json['date']
-		self.status = json['status']
+	@classmethod
+	def from_json(cls, json, network="mainnet"):
+		cls.status = json['status']
+		cls.account_created = json['date']
 
-		self.discovery()
+		return cls(json['name'], json['lastname'],
+				   json['email'], json['passwd'],
+				   BIP32Node.from_text(json['public_key']),
+				   network)
 
 	def get_key_info(self, bip32node):
 		child_number = bip32node.child_index()
