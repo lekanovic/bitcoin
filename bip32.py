@@ -2,14 +2,12 @@
 
 
 from pycoin.tx.tx_utils import create_tx, create_signed_tx
-from biteasy import Biteasy
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode
 from pycoin.serialize import b2h, h2b, h2b_rev
 from pycoin.tx.Spendable import Spendable
 from pycoin.encoding import wif_to_secret_exponent
 from pycoin.tx.pay_to import build_hash160_lookup
-from insight import send_tx
 from mnemonic import Mnemonic
 from account import Account
 import binascii
@@ -212,7 +210,7 @@ print radde_account.to_json()
 #t = BIP32Node.from_text('xpub661MyMwAqRbcFoBYLHdXxaBao1pAZhopxEa2v8yJno9KLVz5aBWRhYr5FTMUibk2Zm16XbEpiodB6Lygsiuq9uFvJA3YUBpZ72fACHhNinv')
 #print_key_info(t)
 
-'''
+
 tx_unsigned = radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=67000)
 
 if tx_unsigned is None:
@@ -250,3 +248,4 @@ wifs.append(priv_key)
 tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
 
 maja_account.send_tx(tx_signed)
+'''
