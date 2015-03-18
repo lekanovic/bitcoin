@@ -43,7 +43,8 @@ def main(argv):
 
 		print "Creating account:"
 		json_dict = json.loads(account.to_json())
-		print db.add_account(json_dict)
+		if not db.add_account(json_dict):
+			print "Account already exist"
 		print account.to_json()
 
 if __name__ == "__main__":
