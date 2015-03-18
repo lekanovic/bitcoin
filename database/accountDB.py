@@ -56,7 +56,10 @@ class AccountsDB(object):
 			{'$set': {'status': new_status}},upsert=False, multi=False)
 
 	def find_account(self, account):
-		res = self.db.account.find_one({"email" : account['email']})
+		if type(account) == str:
+			res = self.db.account.find_one({"email" : account})
+		elif type(account) == dict:
+			res = self.db.account.find_one({"email" : account['email']})
 		return dumps(res, indent=4)
 
 	def get_all_accounts(self):
