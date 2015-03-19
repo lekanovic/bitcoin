@@ -75,12 +75,16 @@ def main(argv):
 	parser.add_argument("-l","--list", action='store_true', help="List all accounts")
 	parser.add_argument("-d","--delete", action='store_true', help="Delete all accounts")
 	parser.add_argument("-f","--find", help="Find account by email")
+	parser.add_argument("-i","--index", help="Find account by index")
 	parser.add_argument("-n","--number", action='store_true', help="Number of accounts")
 	parser.add_argument("-s","--send",
 		help="Send Satoshi from one email to another: from:to:amount. Ex bob sends alice 34000 Satoshi bob@hotmail.com:alice@gmail.com:34000")
 	args = parser.parse_args()
 
 	db = AccountsDB()
+
+	if args.index:
+		print db.find_account_index(args.index)
 
 	if args.number:
 		print db.get_number_of_accounts()
