@@ -32,7 +32,7 @@ class AccountsDB(object):
 				Bool: True if account was added, False if account alread exists
 		'''
 		res = self.find_account(account)
-		if res != None:
+		if res != "null":
 			return False
 		self.db.account.insert(account)
 		return True
@@ -60,6 +60,13 @@ class AccountsDB(object):
 			res = self.db.account.find_one({"email" : account})
 		elif type(account) == dict:
 			res = self.db.account.find_one({"email" : account['email']})
+		return dumps(res, indent=4)
+
+	def find_account_index(self, account):
+		if type(account) == str:
+			res = self.db.account.find_one({"account_index" : account})
+		elif type(account) == dict:
+			res = self.db.account.find_one({"account_index" : account['account_index']})
 		return dumps(res, indent=4)
 
 	def get_all_accounts(self):
