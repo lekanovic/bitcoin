@@ -75,11 +75,15 @@ def main(argv):
 	parser.add_argument("-l","--list", action='store_true', help="List all accounts")
 	parser.add_argument("-d","--delete", action='store_true', help="Delete all accounts")
 	parser.add_argument("-f","--find", help="Find account by email")
+	parser.add_argument("-n","--number", action='store_true', help="Number of accounts")
 	parser.add_argument("-s","--send",
 		help="Send Satoshi from one email to another: from:to:amount. Ex bob sends alice 34000 Satoshi bob@hotmail.com:alice@gmail.com:34000")
 	args = parser.parse_args()
 
 	db = AccountsDB()
+
+	if args.number:
+		print db.get_number_of_accounts()
 
 	if args.send:
 		s = args.send.split(":")
@@ -115,9 +119,15 @@ def main(argv):
 		db.drop_database()
 
 	if args.list:
-		for a in db.get_all_accounts():
+		print "{\"accounts\" : ["
+		lst = db.get_all_accounts()
+		for a in lst[:-1]:
 			res = json.loads(a)
 			print  Account.from_json(res, network).to_json()
+			print ","
+		res = json.loads(lst[-1])
+		print Account.from_json(res, network).to_json()
+		print "]}"
 
 	if args.add:
 		# split the name:lastname:email:password string
