@@ -184,7 +184,7 @@ elif network == "mainnet":
 
 master = BIP32Node.from_master_secret(seed, netcode)
 #master = BIP32Node.from_master_secret(seed, netcode='BTC')
-#print_key_info(master)
+print_key_info(master)
 
 # Get account key path
 account_keys = master.subkey_for_path( (key_path + "0H.pub") )
