@@ -106,9 +106,11 @@ def main(argv):
 
 		tx_unsigned = sender.pay_to_address(addr,amount)
 
-		tx_signed = sign_tx(sender, tx_unsigned, netcode)
-
-		sender.send_tx(tx_signed)
+		if not tx_unsigned is None:
+			tx_signed = sign_tx(sender, tx_unsigned, netcode)
+			sender.send_tx(tx_signed)
+		else:
+			print "Transaction failed"
 
 	if args.find:
 		res = db.find_account(args.find)
