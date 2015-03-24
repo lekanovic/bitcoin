@@ -223,26 +223,19 @@ class Account():
 		tx.set_unspents(to_spend)
 
 		print "Transaction fee %d" % tx.fee()
-		#print_tx(tx)
+		t = tx.as_hex(include_unspents=True)
+		print t
+		print "Transaction size %d unsigned" % len(t)
 
 		return tx
 
 	def send_tx(self, tx_signed):
-		print_tx(tx_signed)
+		t = tx_signed.as_hex(include_unspents=True)
+		print t
+		print "Transaction size %d signed" % len(t)
+
 		for idx, tx_out in enumerate(tx_signed.txs_in):
 			if not tx_signed.is_signature_ok(idx):
 				print "Signature Error"
 		# Send the transaction to network.
 		self.insight.send_tx(tx_signed)
-
-
-# This just an temporary function and should be
-# removed later.
-def print_tx(tx):
-	import io
-	from pycoin.serialize import b2h
-	s = io.BytesIO()
-	tx.stream(s)
-	tx_as_hex = b2h(s.getvalue())
-
-	print tx_as_hex
