@@ -196,12 +196,14 @@ class Account():
 		print "Pay %d to %s" % (amount, to_addr)
 		spendables = self.insight.spendables_for_addresses(self.__get_all_keys())
 
-		to_spend, change = self.__greedy(spendables, amount)
+		if amount <= fee:
+			print " Amount smaller then the fee"
+			return None
+
+		# Get spendables including fee
+		to_spend, change = self.__greedy(spendables, amount + fee)
 
 		print "The change is %d" % change
-
-		if change > fee:
-			change -= fee
 
 		if to_spend is None:
 			return None
@@ -227,6 +229,9 @@ class Account():
 
 	def send_tx(self, tx_signed):
 		print_tx(tx_signed)
+		for idx, tx_out in enumerate(tx_signed.txs_in):
+			if not tx_signed.is_signature_ok(idx):
+				print "Signature Error"
 		# Send the transaction to network.
 		self.insight.send_tx(tx_signed)
 
