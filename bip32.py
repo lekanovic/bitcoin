@@ -216,11 +216,12 @@ keys = []
 keys.append(k1)
 keys.append(k2)
 keys.append(k3)
-M=3
-print k1, k2, k3
+
 tx = radde_account.multisig_2_of_3(keys)
 
 print tx.as_hex()
+
+
 #print master.subkey_for_path("44H/0H/0H/0/0").address()
 #radde_account.wallet_info()
 #maja_account.wallet_info()
@@ -231,9 +232,7 @@ print tx.as_hex()
 #print_key_info(t)
 
 
-
-'''
-tx_unsigned = radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=67000)
+tx_unsigned = radde_account.pay_to_address("2MwWm8DzHrBD66WsnhfhFjFKWbeBvvcxfyt",amount=67000)
 
 if tx_unsigned is None:
     print "Insufficient funds cannot perform transaction"
@@ -250,7 +249,7 @@ wifs.append(priv_key)
 tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
 
 radde_account.send_tx(tx_signed)
-
+'''
 
 
 tx_unsigned = maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=450000)
