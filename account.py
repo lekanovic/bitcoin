@@ -79,6 +79,9 @@ class Account():
 	def get_email(self):
 		return self.email
 
+	def get_key(self):
+		return self.key_external.subkey_for_path(str(self.index))
+
 	def __next_address(self, i):
 		index = 0
 		if type(i) == int:
