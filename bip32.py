@@ -3,6 +3,7 @@
 
 from pycoin.tx.tx_utils import create_tx, create_signed_tx
 from pycoin.key.BIP32Node import BIP32Node
+from pycoin.key.Key import Key
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode
 from pycoin.serialize import b2h, h2b, h2b_rev
 from pycoin.tx.Spendable import Spendable
@@ -184,7 +185,7 @@ elif network == "mainnet":
 
 master = BIP32Node.from_master_secret(seed, netcode)
 #master = BIP32Node.from_master_secret(seed, netcode='BTC')
-print_key_info(master)
+#print_key_info(master)
 
 # Get account key path
 account_keys = master.subkey_for_path( (key_path + "0H.pub") )
@@ -199,8 +200,27 @@ account_keys = master.subkey_for_path( (key_path + "1H.pub") )
 
 maja_account = Account('Maja','Lekanovic','majasusa@hotmail.com', 'password2', account_keys, network)
 
+account_keys = master.subkey_for_path( (key_path + "2H.pub") )
+
+calle_account = Account('Calle','Bengtsson','cbengtsson@hotmail.com', 'password3', account_keys, network)
+
 print maja_account.to_json()
 print radde_account.to_json()
+print calle_account.to_json(True)
+
+k1 = maja_account.get_key()
+k2 = radde_account.get_key()
+k3 = calle_account.get_key()
+
+keys = []
+keys.append(k1)
+keys.append(k2)
+keys.append(k3)
+M=3
+print k1, k2, k3
+tx = radde_account.multisig_2_of_3(keys)
+
+print tx.as_hex()
 #print master.subkey_for_path("44H/0H/0H/0/0").address()
 #radde_account.wallet_info()
 #maja_account.wallet_info()
@@ -211,6 +231,8 @@ print radde_account.to_json()
 #print_key_info(t)
 
 
+
+'''
 tx_unsigned = radde_account.pay_to_address(maja_account.get_bitcoin_address(),amount=67000)
 
 if tx_unsigned is None:
@@ -229,7 +251,7 @@ tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
 
 radde_account.send_tx(tx_signed)
 
-'''
+
 
 tx_unsigned = maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=450000)
 
