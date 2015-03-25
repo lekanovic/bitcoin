@@ -4,6 +4,8 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.services.insight import InsightService
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
+from pycoin.tx.pay_to import address_for_pay_to_script, ScriptMultisig
+from pycoin.tx.TxIn import TxIn
 
 import datetime
 import md5
@@ -23,6 +25,10 @@ class Account():
 		self.subkeys = []
 		self.index = 0
 		self.network = network
+		if network == 'mainnet':
+			self.netcode = 'BTC'
+		elif network == 'testnet':
+			self.netcode = 'XTN'
 		self.insight = InsightService("http://localhost:3001")
 		self.account_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
 		self.public_key = bip32node.wallet_key(as_private=False)
@@ -228,6 +234,38 @@ class Account():
 		print "Transaction size %d unsigned" % len(t)
 
 		return tx
+
+	def multisig_2_of_3(self, keys):
+		N = 2 # Keys needed to unlock
+		M = 3 # Keys used to sign
+
+		tx_in = TxIn.coinbase_tx_in(script=b'')
+
+		script = ScriptMultisig(n=N, sec_keys=[key.sec() for key in keys[:M]])
+
+		print "Script %s" % repr(script)
+		print "TxIn %s" % tx_in.bitcoin_address()
+		script = script.script()
+
+		address = address_for_pay_to_script(script, self.netcode)
+		print "Multisig address: %s" % address
+
+		tx_out = TxOut(1000000, script)
+		tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
+
+		print tx1.as_hex(include_unspents=True)
+
+		return tx1
+		'''
+		hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys)
+		tx_signed = tx2.sign(hash160_lookup=hash160_lookup)
+
+		for idx, tx_out in enumerate(tx2.txs_in):
+			if not tx2.is_signature_ok(idx):
+				print "Signature Error"
+
+		print_tx(tx_signed)
+		'''
 
 	def send_tx(self, tx_signed):
 		t = tx_signed.as_hex(include_unspents=True)
