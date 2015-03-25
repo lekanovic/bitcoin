@@ -258,7 +258,7 @@ class Account():
 
 		print tx1.as_hex(include_unspents=True)
 
-		return tx1
+		return tx1, address
 		'''
 		hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys)
 		tx_signed = tx2.sign(hash160_lookup=hash160_lookup)
