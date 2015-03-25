@@ -208,18 +208,14 @@ print maja_account.to_json()
 print radde_account.to_json()
 print calle_account.to_json(True)
 
-k1 = maja_account.get_key()
-k2 = radde_account.get_key()
-k3 = calle_account.get_key()
-
 keys = []
-keys.append(k1)
-keys.append(k2)
-keys.append(k3)
+keys.append(maja_account.get_key())
+keys.append(radde_account.get_key())
+keys.append(calle_account.get_key())
 
-tx = radde_account.multisig_2_of_3(keys)
+tx_multi_unsigned, multi_address = radde_account.multisig_2_of_3(keys)
 
-print tx.as_hex()
+print tx_multi_unsigned.as_hex()
 
 
 #print master.subkey_for_path("44H/0H/0H/0/0").address()
@@ -232,7 +228,7 @@ print tx.as_hex()
 #print_key_info(t)
 
 
-tx_unsigned = radde_account.pay_to_address("2MwWm8DzHrBD66WsnhfhFjFKWbeBvvcxfyt",amount=67000)
+tx_unsigned = radde_account.pay_to_address(multi_address, amount=67000)
 
 if tx_unsigned is None:
     print "Insufficient funds cannot perform transaction"
