@@ -200,6 +200,9 @@ class Account():
 				return result, change
 		return None, 0
 
+	def has_unconfirmed_balance(self):
+		return self.insight.has_unconfirmed_balance(self.__get_all_keys())
+
 	# http://bitcoin.stackexchange.com/questions/1077/what-is-the-coin-selection-algorithm
 	def pay_to_address(self, to_addr, amount, fee=10000):
 		print "Pay %d to %s" % (amount, to_addr)
