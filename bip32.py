@@ -11,6 +11,9 @@ from pycoin.encoding import wif_to_secret_exponent
 from pycoin.tx.pay_to import build_hash160_lookup
 from mnemonic import Mnemonic
 from account import Account
+from pycoin.services.insight import InsightService
+from pycoin.tx.TxOut import TxOut, standard_tx_out_script
+from pycoin.tx import Tx, TxIn, TxOut, tx_utils
 import binascii
 import time
 import urllib
@@ -154,6 +157,12 @@ def create_new_account(name, lastname, email, passwd, key):
 
 # This will generate private keys for the two accounts
 def get_priv_key(account, index, network="testnet"):
+    if type(index) == str:
+        index = int(index)
+
+    if type(account) == str:
+        account = int(account)
+
     if network == "testnet":
         p1 = "44H/1H/%dH/0/%d" % (account, index)
     elif network == "mainnet":
@@ -208,15 +217,6 @@ print maja_account.to_json(True)
 print radde_account.to_json()
 print calle_account.to_json()
 
-keys = []
-keys.append(maja_account.get_key())
-keys.append(radde_account.get_key())
-keys.append(calle_account.get_key())
-
-tx_multi_unsigned, multi_address = radde_account.multisig_2_of_3(keys)
-
-print tx_multi_unsigned.as_hex()
-
 
 #print master.subkey_for_path("44H/0H/0H/0/0").address()
 #radde_account.wallet_info()
@@ -227,7 +227,83 @@ print tx_multi_unsigned.as_hex()
 #t = BIP32Node.from_text('xpub661MyMwAqRbcFoBYLHdXxaBao1pAZhopxEa2v8yJno9KLVz5aBWRhYr5FTMUibk2Zm16XbEpiodB6Lygsiuq9uFvJA3YUBpZ72fACHhNinv')
 #print_key_info(t)
 
+'''
+# Radde redeem multisig -----------------
+print maja_account.get_key(0).address()
+print radde_account.get_key(0).address()
+print calle_account.get_key(0).address()
 
+keys = []
+k1 = get_priv_key(maja_account.account_index , 0, network="testnet")
+k2 = get_priv_key(calle_account.account_index , 0, network="testnet")
+k3 = get_priv_key(radde_account.account_index , 0, network="testnet")
+
+for key in keys:
+    print key.secret_exponent()
+exit(1)
+
+insight = InsightService("http://localhost:3001")
+
+spendables = insight.spendables_for_address("2Mxp1mDd9Hqu3iQcpEWaAHkeHCkHhXnhVSJ")
+
+txs_in = [s.tx_in() for s in spendables]
+
+amount=0
+for s in spendables:
+    print s.coin_value
+    amount += s.coin_value
+
+txs_out = []
+# Send bitcoin to the addess 'to_addr'
+script = standard_tx_out_script("mqESpoK2bDzreSNEu2SmH9cQLc4EuYAZL8")
+txs_out.append(TxOut(amount, script))
+
+tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out, lock_time=0)
+tx.set_unspents(spendables)
+
+hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys)
+tx_signed = tx.sign(hash160_lookup=hash160_lookup)
+
+for idx, tx_out in enumerate(tx2.txs_in):
+    if not tx.is_signature_ok(idx):
+        print "Signature Error"
+
+print_tx(tx_signed)
+# END Radde redeem multisig -----------------
+'''
+
+
+# Radde multisig create -----------------
+keys = []
+keys.append(maja_account.get_key(0))
+keys.append(radde_account.get_key(0))
+keys.append(calle_account.get_key(0))
+
+for k in keys:
+    print type(k), k.address()
+
+tx_multi_unsigned, multi_address = radde_account.multisig_2_of_3(keys)
+
+
+wifs = []
+wifs.append(get_priv_key(maja_account.account_index , 0, network="testnet"))
+wifs.append(get_priv_key(radde_account.account_index , 0, network="testnet"))
+wifs.append(get_priv_key(calle_account.account_index , 0, network="testnet"))
+
+for w in wifs:
+    print type(w), w
+
+
+tx_signed = tx_multi_unsigned.sign(LazySecretExponentDB(wifs, {}))
+
+#print tx_signed.as_hex()
+
+radde_account.send_tx(tx_signed)
+
+# END Radde multisig create -----------------
+
+'''
+# Radde account -----------------
 tx_unsigned = radde_account.pay_to_address(multi_address, amount=67000)
 
 if tx_unsigned is None:
@@ -245,9 +321,13 @@ wifs.append(priv_key)
 tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
 
 radde_account.send_tx(tx_signed)
+
+time.sleep(5)
+# END Radde account -----------------
 '''
 
-
+'''
+# Maja account -----------------
 tx_unsigned = maja_account.pay_to_address(radde_account.get_bitcoin_address(),amount=450000)
 
 if tx_unsigned is None:
@@ -275,4 +355,5 @@ while True:
     print "Waiting confirmation.."
 
 print "Successfully sent BTC"
+# END Maja account -----------------
 '''
