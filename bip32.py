@@ -12,7 +12,7 @@ from pycoin.tx.pay_to import build_hash160_lookup
 from mnemonic import Mnemonic
 from account import Account
 import binascii
-
+import time
 import urllib
 import urllib2
 
@@ -204,9 +204,9 @@ account_keys = master.subkey_for_path( (key_path + "2H.pub") )
 
 calle_account = Account('Calle','Bengtsson','cbengtsson@hotmail.com', 'password3', account_keys, network)
 
-print maja_account.to_json()
+print maja_account.to_json(True)
 print radde_account.to_json()
-print calle_account.to_json(True)
+print calle_account.to_json()
 
 keys = []
 keys.append(maja_account.get_key())
@@ -265,4 +265,14 @@ wifs.append(priv_key)
 tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
 
 maja_account.send_tx(tx_signed)
+
+time.sleep(5)
+
+while True:
+    if not radde_account.has_unconfirmed_balance():
+        break
+    time.sleep(5)
+    print "Waiting confirmation.."
+
+print "Successfully sent BTC"
 '''
