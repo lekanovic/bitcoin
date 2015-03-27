@@ -244,6 +244,7 @@ class Account():
 
 		return tx
 
+	# http://bitcore.io/playground/#/transaction
 	def multisig_2_of_3(self, keys):
 		N = 2 # Keys needed to unlock
 		M = 3 # Keys used to sign
