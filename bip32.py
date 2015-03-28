@@ -233,7 +233,7 @@ print calle_account.to_json()
 
 
 # Radde redeem multisig -----------------
-
+fee = 10000
 keys = []
 keys.append(maja_account.get_key(0))
 keys.append(radde_account.get_key(0))
@@ -242,14 +242,14 @@ keys.append(calle_account.get_key(0))
 wifs = []
 wifs.append(get_priv_key(maja_account.account_index , 0, network="testnet"))
 wifs.append(get_priv_key(radde_account.account_index , 0, network="testnet"))
-wifs.append(get_priv_key(calle_account.account_index , 0, network="testnet"))
+#wifs.append(get_priv_key(calle_account.account_index , 0, network="testnet"))
 
 for key in wifs:
     print key.secret_exponent()
 
 insight = InsightService("http://localhost:3001")
 
-spendables = insight.spendables_for_address("2Mxp1mDd9Hqu3iQcpEWaAHkeHCkHhXnhVSJ")
+spendables = insight.spendables_for_address("2N6QZqaXZ9rBoHF599oEy59DVYv65CBP3NN")
 
 txs_in = [s.tx_in() for s in spendables]
 
@@ -258,7 +258,7 @@ for s in spendables:
     print s.coin_value
     amount += s.coin_value
 
-
+amount = amount - fee
 txs_out = []
 # Send bitcoin to the addess 'to_addr'
 script = standard_tx_out_script("mqESpoK2bDzreSNEu2SmH9cQLc4EuYAZL8")
@@ -266,7 +266,7 @@ txs_out.append(TxOut(amount, script))
 
 tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out, lock_time=0)
 tx.set_unspents(spendables)
-print tx.as_hex()
+
 M=3
 N=2
 hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in wifs)
@@ -275,6 +275,7 @@ p2sh_lookup = build_p2sh_lookup([underlying_script])
 tx_signed = tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
 
 maja_account.send_tx(tx_signed)
+
 exit(1)
 
 # END Radde redeem multisig -----------------
@@ -291,6 +292,8 @@ for k in keys:
     print type(k), k.address()
 
 tx_multi_unsigned, multi_address = radde_account.multisig_2_of_3(keys)
+print tx_multi_unsigned.as_hex()
+exit(1)
 '''
 # END Radde multisig create -----------------
 
@@ -298,8 +301,8 @@ tx_multi_unsigned, multi_address = radde_account.multisig_2_of_3(keys)
 
 # Radde account -----------------
 '''
-multi_address = "2Mxp1mDd9Hqu3iQcpEWaAHkeHCkHhXnhVSJ"
-tx_unsigned = radde_account.pay_to_address(multi_address, amount=22222)
+multi_address = "2N6QZqaXZ9rBoHF599oEy59DVYv65CBP3NN"
+tx_unsigned = radde_account.pay_to_address(multi_address, amount=222222)
 
 if tx_unsigned is None:
     print "Insufficient funds cannot perform transaction"
@@ -317,7 +320,7 @@ tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
 
 radde_account.send_tx(tx_signed)
 
-time.sleep(5)
+exit(1)
 '''
 # END Radde account -----------------
 
