@@ -274,7 +274,8 @@ underlying_script = ScriptMultisig(n=N, sec_keys=[key.sec() for key in keys[:M]]
 p2sh_lookup = build_p2sh_lookup([underlying_script])
 tx_signed = tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
 
-maja_account.send_tx(tx_signed)
+tx_id = maja_account.send_tx(tx_signed)
+print tx_id
 
 exit(1)
 
@@ -318,7 +319,8 @@ wifs.append(priv_key)
 
 tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
 
-radde_account.send_tx(tx_signed)
+tx_id = radde_account.send_tx(tx_signed)
+print tx_id
 
 exit(1)
 '''
@@ -344,7 +346,8 @@ wifs.append(priv_key)
 
 tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
 
-maja_account.send_tx(tx_signed)
+tx_id = maja_account.send_tx(tx_signed)
+print tx_id
 
 time.sleep(5)
 
@@ -357,31 +360,3 @@ while True:
 print "Successfully sent BTC"
 '''
 # END Maja account -----------------
-
-
-M=3
-N=2
-keys = []
-keys.append(maja_account.get_key(0))
-keys.append(radde_account.get_key(0))
-keys.append(calle_account.get_key(0))
-
-tx_in = TxIn.coinbase_tx_in(script=b'')
-script = ScriptMultisig(n=N, sec_keys=[key.sec() for key in keys[:M]]).script()
-tx_out = TxOut(1000000, script)
-tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
-tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
-print tx2.as_hex()
-
-
-for key in keys:
-    print key.secret_exponent()
-
-wifs = []
-wifs.append(get_priv_key(maja_account.account_index , 0, network="testnet"))
-wifs.append(get_priv_key(radde_account.account_index , 0, network="testnet"))
-wifs.append(get_priv_key(calle_account.account_index , 0, network="testnet"))
-
-hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in wifs)
-tx2.sign(hash160_lookup=hash160_lookup)
-print tx2.as_hex()
