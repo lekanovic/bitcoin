@@ -6,7 +6,8 @@ from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
 from pycoin.tx.pay_to import address_for_pay_to_script, ScriptMultisig
 from pycoin.tx.TxIn import TxIn
-
+from pycoin.tx.tx_utils import distribute_from_split_pool
+from pycoin.convention import tx_fee
 import datetime
 import md5
 import json
@@ -206,22 +207,20 @@ class Account():
 	def has_unconfirmed_balance(self):
 		return self.insight.has_unconfirmed_balance(self.__get_all_keys())
 
-	# http://bitcoin.stackexchange.com/questions/1077/what-is-the-coin-selection-algorithm
-	def pay_to_address(self, to_addr, amount, fee=10000):
+	def __pay_with_fee(self, to_addr, amount, fee=10000):
 		print "Pay %d to %s" % (amount, to_addr)
 		spendables = self.insight.spendables_for_addresses(self.__get_all_keys())
-
-		if amount <= fee:
-			print " Amount smaller then the fee"
-			return None
 
 		# Get spendables including fee
 		to_spend, change = self.__greedy(spendables, amount + fee)
 
-		print "The change is %d" % change
+		available_funds = sum(s.coin_value for s in to_spend)
 
-		if to_spend is None:
-			return None
+		if available_funds < (amount + fee):
+			print "Insufficient funds"
+			return TransactionCode.Insufficient_funds
+
+		print "The change is %d" % change
 
 		txs_in = [spendable.tx_in() for spendable in to_spend]
 
@@ -241,6 +240,18 @@ class Account():
 		t = tx.as_hex(include_unspents=True)
 		print t
 		print "Transaction size %d unsigned" % len(t)
+
+		return tx
+
+	# http://bitcoin.stackexchange.com/questions/1077/what-is-the-coin-selection-algorithm
+	def pay_to_address(self, to_addr, amount, fee=10000):
+		tx = self.__pay_with_fee(to_addr, amount, fee)
+
+		recommended_fee = tx_fee.recommended_fee_for_tx(tx)
+
+		if recommended_fee != fee:
+			print "Recommended fee %d but using %d" % (recommended_fee, fee)
+			tx = self.__pay_with_fee(to_addr, amount, recommended_fee)
 
 		return tx
 
