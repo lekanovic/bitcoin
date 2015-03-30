@@ -9,6 +9,8 @@ from pycoin.serialize import b2h, h2b, h2b_rev
 from pycoin.tx.Spendable import Spendable
 from pycoin.encoding import wif_to_secret_exponent
 from pycoin.tx.pay_to import build_hash160_lookup
+from pycoin.tx.pay_to import ScriptOPReturn
+from pycoin.tx.pay_to import ScriptPayToAddress
 from mnemonic import Mnemonic
 from account import Account
 from pycoin.services.insight import InsightService
@@ -232,8 +234,48 @@ print calle_account.to_json()
 #print_key_info(t)
 
 
+# Radde Testing ScriptOPReturn-------------------------
+
+# 1,"mqZFaYY7YFW4mZjJEFTr8Sj8hvEDL3Pfrb","929bo6gAGBWCqa98JWHCCAK4Ut4fo6jcfp9sGaD2oJvfrqaPDi2"
+# 2,"mpmtqTtVoq6gofujw3q6iQtnMv32qVD5HZ","92Hnwgr3EUyCVMooEF4tDiAZhaaQi84EJChr1dS5tpUpKTbUWaj"
+# 3,"mrtUGsqSdpC9QpvdXTucmmQs2yK2eaiobd","91xKLfJn9FPhMqg8fQYpdydGvCmNadoPH29pWFuyZfSzDcEdMwJ"
+insight = InsightService("http://localhost:3001")
+
+addr = "mqZFaYY7YFW4mZjJEFTr8Sj8hvEDL3Pfrb"
+spendables = insight.spendables_for_address(addr)
+
+#if insight.has_unconfirmed_balance(addr):
+#    print "Has unconfirmed"
+
+txs_in = [s.tx_in() for s in spendables]
+amount=0
+for s in spendables:
+    print s.coin_value
+    amount += s.coin_value
+txs_out = []
+
+amount = amount - 20000 # Add fee
+
+# Send bitcoin to the addess 'to_addr'
+#script = standard_tx_out_script("mqESpoK2bDzreSNEu2SmH9cQLc4EuYAZL8")
+script = ScriptOPReturn("Radde e cool").script()
+txs_out.append(TxOut(amount, script))
+script = ScriptPayToAddress("mrtUGsqSdpC9QpvdXTucmmQs2yK2eaiobd").script()
+txs_out.append(TxOut(10000, script))
+tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out, lock_time=0)
+tx.set_unspents(spendables)
+
+print tx.as_hex()
+
+wifs=[]
+wifs.append("929bo6gAGBWCqa98JWHCCAK4Ut4fo6jcfp9sGaD2oJvfrqaPDi2")
+tx_signed = tx.sign(LazySecretExponentDB(wifs, {}))
+
+print tx_signed.as_hex()
+# END Radde Testing ScriptOPReturn-------------------------
+
 # Radde redeem multisig -----------------
-fee = 10000
+'''
 keys = []
 keys.append(maja_account.get_key(0))
 keys.append(radde_account.get_key(0))
@@ -242,14 +284,14 @@ keys.append(calle_account.get_key(0))
 wifs = []
 wifs.append(get_priv_key(maja_account.account_index , 0, network="testnet"))
 wifs.append(get_priv_key(radde_account.account_index , 0, network="testnet"))
-#wifs.append(get_priv_key(calle_account.account_index , 0, network="testnet"))
+wifs.append(get_priv_key(calle_account.account_index , 0, network="testnet"))
 
 for key in wifs:
     print key.secret_exponent()
 
 insight = InsightService("http://localhost:3001")
 
-spendables = insight.spendables_for_address("2N6QZqaXZ9rBoHF599oEy59DVYv65CBP3NN")
+spendables = insight.spendables_for_address("2Mxp1mDd9Hqu3iQcpEWaAHkeHCkHhXnhVSJ")
 
 txs_in = [s.tx_in() for s in spendables]
 
@@ -258,7 +300,7 @@ for s in spendables:
     print s.coin_value
     amount += s.coin_value
 
-amount = amount - fee
+
 txs_out = []
 # Send bitcoin to the addess 'to_addr'
 script = standard_tx_out_script("mqESpoK2bDzreSNEu2SmH9cQLc4EuYAZL8")
@@ -266,19 +308,24 @@ txs_out.append(TxOut(amount, script))
 
 tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out, lock_time=0)
 tx.set_unspents(spendables)
-
+print tx.as_hex()
 M=3
 N=2
 hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in wifs)
 underlying_script = ScriptMultisig(n=N, sec_keys=[key.sec() for key in keys[:M]]).script()
 p2sh_lookup = build_p2sh_lookup([underlying_script])
+
+
+
+for a in p2sh_lookup:
+    print type(b2h(a))
+
+
 tx_signed = tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
 
-tx_id = maja_account.send_tx(tx_signed)
-print tx_id
-
+maja_account.send_tx(tx_signed)
 exit(1)
-
+'''
 # END Radde redeem multisig -----------------
 
 
@@ -293,8 +340,6 @@ for k in keys:
     print type(k), k.address()
 
 tx_multi_unsigned, multi_address = radde_account.multisig_2_of_3(keys)
-print tx_multi_unsigned.as_hex()
-exit(1)
 '''
 # END Radde multisig create -----------------
 
@@ -302,8 +347,8 @@ exit(1)
 
 # Radde account -----------------
 '''
-multi_address = "2N6QZqaXZ9rBoHF599oEy59DVYv65CBP3NN"
-tx_unsigned = radde_account.pay_to_address(multi_address, amount=222222)
+multi_address = "2Mxp1mDd9Hqu3iQcpEWaAHkeHCkHhXnhVSJ"
+tx_unsigned = radde_account.pay_to_address(multi_address, amount=22222)
 
 if tx_unsigned is None:
     print "Insufficient funds cannot perform transaction"
@@ -319,10 +364,9 @@ wifs.append(priv_key)
 
 tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
 
-tx_id = radde_account.send_tx(tx_signed)
-print tx_id
+radde_account.send_tx(tx_signed)
 
-exit(1)
+time.sleep(5)
 '''
 # END Radde account -----------------
 
@@ -346,8 +390,7 @@ wifs.append(priv_key)
 
 tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
 
-tx_id = maja_account.send_tx(tx_signed)
-print tx_id
+maja_account.send_tx(tx_signed)
 
 time.sleep(5)
 
