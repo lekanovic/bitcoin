@@ -2,8 +2,8 @@ import argparse, sys
 import json
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.serialize import h2b
-from account import Account
-from database.accountDB import AccountsDB
+from picunia.users.account import Account
+from picunia.database.accountDB import AccountsDB
 from bson.json_util import dumps
 from pycoin.encoding import wif_to_secret_exponent
 from pycoin.tx.pay_to import build_hash160_lookup

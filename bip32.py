@@ -12,12 +12,13 @@ from pycoin.tx.pay_to import build_hash160_lookup
 from pycoin.tx.pay_to import ScriptOPReturn
 from pycoin.tx.pay_to import ScriptPayToAddress
 from mnemonic import Mnemonic
-from account import Account
+from picunia.users.account import Account
 from pycoin.services.insight import InsightService
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
 from pycoin.tx import Tx, TxIn, TxOut, tx_utils
 from pycoin.tx.pay_to import ScriptMultisig
 from pycoin.tx.pay_to import address_for_pay_to_script, build_hash160_lookup, build_p2sh_lookup
+from picunia.collection.proof import ProofOfExistence
 import binascii
 import time
 import urllib
@@ -257,11 +258,23 @@ txs_out = []
 amount = amount - 20000 # Add fee
 
 # Send bitcoin to the addess 'to_addr'
-#script = standard_tx_out_script("mqESpoK2bDzreSNEu2SmH9cQLc4EuYAZL8")
-script = ScriptOPReturn("Radde e cool").script()
+#script = ScriptOPReturn("Radde e cool").script()
+#txs_out.append(TxOut(amount, script))
+msg = "Nytt contract"
+msg += "radde is the coolest person in the world. Everyone knows this fact"
+msg += "Wise busy past both park when an ye no. Nay likely her length sooner thrown sex lively income. The"
+msg += "Extremity direction existence as dashwoods do up. Securing marianne led welcomed offended but offer"
+msg += "ing six raptures. Conveying concluded newspaper rapturous oh at. Two indeed suffer saw beyond far "
+msg += "former mrs remain. Occasional continuing possession we insensible an sentiments as is. Law but"
+msg += "reasonably motionless principles she. Has six worse downs far blush rooms above stood. Remain"
+msg += "lively hardly needed at do by. Two you fat downs fanny three. True mr gone most at. Dare as name"
+msg += "just when with it body. Travelling inquietude she increasing off impossible the. Cottage be noisier"
+msg += "looking to we promise on. Disposal to kindness appetite diverted learning of on raptures. Betrayed "
+
+txs_out.extend(ProofOfExistence(msg).generate_txout())
+
+script = ScriptPayToAddress("mqZFaYY7YFW4mZjJEFTr8Sj8hvEDL3Pfrb").script()
 txs_out.append(TxOut(amount, script))
-script = ScriptPayToAddress("mrtUGsqSdpC9QpvdXTucmmQs2yK2eaiobd").script()
-txs_out.append(TxOut(10000, script))
 tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out, lock_time=0)
 tx.set_unspents(spendables)
 
@@ -272,6 +285,7 @@ wifs.append("929bo6gAGBWCqa98JWHCCAK4Ut4fo6jcfp9sGaD2oJvfrqaPDi2")
 tx_signed = tx.sign(LazySecretExponentDB(wifs, {}))
 
 print tx_signed.as_hex()
+print "Transaction size %d" % len(tx_signed.as_hex())
 # END Radde Testing ScriptOPReturn-------------------------
 
 # Radde redeem multisig -----------------
