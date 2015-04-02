@@ -88,10 +88,10 @@ while True:
 			tx = insight.get_tx(t)
 			print "tx_in:"
 			for t in tx.txs_in:
-				print t.bitcoin_address()
+				print t.bitcoin_address(netcode)
 			print "tx_out:"
 			for t in tx.txs_out:
-				print t.bitcoin_address()
+				print t.bitcoin_address(netcode)
 			print repr(tx)
 	tmp = cur
 	time.sleep(5)
