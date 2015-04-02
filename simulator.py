@@ -40,6 +40,7 @@ def add_account(name, lastname, email, passwd):
     proc = subprocess.Popen([cmd],
                     stdout=subprocess.PIPE, shell=True)
     (out, err) = proc.communicate()
+    print out
 
 def get_all_accounts():
     proc = subprocess.Popen(["python cc.py -l"],
