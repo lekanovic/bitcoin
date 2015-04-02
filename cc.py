@@ -1,5 +1,6 @@
 import argparse, sys
 import json
+import time
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.serialize import h2b
 from picunia.users.account import Account
@@ -104,6 +105,11 @@ def main(argv):
 
 		addr = receiver.get_bitcoin_address()
 
+		if sender.has_unconfirmed_balance():
+			print "has_unconfirmed_balance, waiting for confirmation.."
+			while sender.has_unconfirmed_balance():
+				time.sleep(5)
+
 		tx_unsigned = sender.pay_to_address(addr,amount)
 
 		if not tx_unsigned is None:
@@ -117,22 +123,19 @@ def main(argv):
 		if res == "null":
 			print "email [%s] not found" % args.find
 		else:
-			found = json.loads(res)
-			account = Account.from_json(found,network)
-			print account.to_json()
+			print res
 
 	if args.delete:
 		db.drop_database()
 
 	if args.list:
 		print "{\"accounts\" : ["
-		lst = db.get_all_accounts()
-		for a in lst[:-1]:
-			res = json.loads(a)
-			print  Account.from_json(res, network).to_json()
-			print ","
-		res = json.loads(lst[-1])
-		print Account.from_json(res, network).to_json()
+
+		n = db.get_number_of_accounts()-1
+		for index in range(0, n):
+			print "%s," % db.find_account_index(str(index))
+		print db.find_account_index(str(n))
+
 		print "]}"
 
 	if args.add:
@@ -149,11 +152,11 @@ def main(argv):
 
 		account = Account(s[0],s[1],s[2],s[3], account_keys, network)
 
-		print "Creating account:"
-		json_dict = json.loads(account.to_json())
+		json_account = account.to_json(include_spendables=True)
+		json_dict = json.loads(json_account)
 		if not db.add_account(json_dict):
 			print "Account already exist"
-		print account.to_json()
+		print json_account
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
