@@ -1,11 +1,12 @@
 from pycoin.key import Key
 from pycoin.tx.pay_to import ScriptMultisig
 from pycoin.tx import Tx, TxIn, TxOut, tx_utils
-from pycoin.serialize import b2h, h2b
+from pycoin.serialize import b2h, h2b, b2h_rev
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.tx.pay_to import address_for_pay_to_script, build_hash160_lookup, build_p2sh_lookup
 from pycoin.services.insight import InsightService
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
+import time
 
 netcode="XTN"
 network="testnet"
@@ -68,14 +69,37 @@ addr = [
 ]
 
 
-
+addr = ["mn9ALd5MGqLbWnswpwJy6MtkpiAKvQEC3n",
+		"myELxCfPvW77N6yjgbgp2XTCSCy15Fj4G1",
+		"mmtzP315J3iF6F6qtTUhF9SDid9HvuL14Q",
+		"miU7fUgT97h63WaPX9LNpQs23QB1Dhd6mg",
+		"mxnEPXCb6NbPGtg3iFdjUHnuQag9RhUDPv"]
 
 insight = InsightService("http://localhost:3001")
+tmp=0
+while True:
+	tip_hash = insight.get_blockchain_tip()
+	cur = b2h_rev(tip_hash)
+	if cur != tmp:
+		blockheader, tx_hashes = insight.get_blockheader_with_transaction_hashes(tip_hash)
+		print blockheader
+		for t in tx_hashes:
+			#print b2h_rev(t)
+			tx = insight.get_tx(t)
+			print "tx_in:"
+			for t in tx.txs_in:
+				print t.bitcoin_address()
+			print "tx_out:"
+			for t in tx.txs_out:
+				print t.bitcoin_address()
+			print repr(tx)
+	tmp = cur
+	time.sleep(5)
 
 if insight.has_unconfirmed_balance(addr):
 	print "Has unconfirmed"
 
-spendables = insight.spendables_for_address("2Mxp1mDd9Hqu3iQcpEWaAHkeHCkHhXnhVSJ")
+spendables = insight.spendables_for_addresses(addr)
 
 txs_in = [s.tx_in() for s in spendables]
 
@@ -84,6 +108,7 @@ for s in spendables:
 	print s.coin_value
 	amount += s.coin_value
 
+'''
 txs_out = []
 # Send bitcoin to the addess 'to_addr'
 script = standard_tx_out_script("mqESpoK2bDzreSNEu2SmH9cQLc4EuYAZL8")
@@ -104,7 +129,7 @@ print_tx(tx_signed)
 
 
 
-'''
+
 N = 2
 M = 3
 
