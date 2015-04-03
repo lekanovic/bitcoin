@@ -6,6 +6,7 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.tx.pay_to import address_for_pay_to_script, build_hash160_lookup, build_p2sh_lookup
 from pycoin.services.insight import InsightService
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
+from picunia.database.accountDB import AccountsDB
 import time
 
 netcode="XTN"
@@ -75,6 +76,8 @@ addr = ["mn9ALd5MGqLbWnswpwJy6MtkpiAKvQEC3n",
 		"miU7fUgT97h63WaPX9LNpQs23QB1Dhd6mg",
 		"mxnEPXCb6NbPGtg3iFdjUHnuQag9RhUDPv"]
 
+db = AccountsDB()
+
 insight = InsightService("http://localhost:3001")
 tmp=0
 while True:
@@ -82,17 +85,23 @@ while True:
 	cur = b2h_rev(tip_hash)
 	if cur != tmp:
 		blockheader, tx_hashes = insight.get_blockheader_with_transaction_hashes(tip_hash)
-		print blockheader
+		#print blockheader
 		for t in tx_hashes:
 			#print b2h_rev(t)
 			tx = insight.get_tx(t)
-			print "tx_in:"
+			#print "tx_in:"
 			for t in tx.txs_in:
-				print t.bitcoin_address(netcode)
-			print "tx_out:"
+				#print t.bitcoin_address(netcode)
+				account = db.find_bitcoin_address(t.bitcoin_address(netcode))
+				if account:
+					print account
+			#print "tx_out:"
 			for t in tx.txs_out:
-				print t.bitcoin_address(netcode)
-			print repr(tx)
+				#print t.bitcoin_address(netcode)
+				account = db.find_bitcoin_address(t.bitcoin_address(netcode))
+				if account:
+					print account
+			#print repr(tx)
 	tmp = cur
 	time.sleep(5)
 
