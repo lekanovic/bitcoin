@@ -152,7 +152,7 @@ def main(argv):
 
 		account = Account(s[0],s[1],s[2],s[3], account_keys, network)
 
-		json_account = account.to_json(include_spendables=True)
+		json_account = account.to_json()
 		json_dict = json.loads(json_account)
 		if not db.add_account(json_dict):
 			print "Account already exist"

@@ -146,39 +146,30 @@ class Account():
 		for k in self.subkeys:
 			print "%s" % (k)
 
-	def to_json(self, include_spendables=False):
+	def to_json(self):
 		balance = self.wallet_balance()
-		if include_spendables:
-			key_amount=[]
-			amount=0
-			for s in self.subkeys:
-				spendable = self.insight.spendables_for_address(s)
-				amount=0
-				for a in spendable:
-					amount += a.coin_value
-				key_amount.append( (s + ":" + str(amount)))
 
+		key_amount=[]
+		amount=0
+		for s in self.__get_all_keys():
+			d={}
+			spendable = self.insight.spendables_for_address(s)
 			amount=0
-			for a in self.insight.spendables_for_address(self.key_change.address()):
+			for a in spendable:
 				amount += a.coin_value
-			key_amount.append( ("change:" + self.key_change.address() + ":" + str(amount)))
+			d['public_address'] = s
+			d['amount'] = amount
+			key_amount.append(d)
 
-			return json.dumps({"name" : self.name, "lastname" : self.lastname,
-							   "email" : self.email, "passwd" : self.passwd,
-							   "account_index" : self.account_index,
-							   "wallet-balance" : balance,
-							   "status": "active",
-							   "public_key": self.public_key,
-							   "date": self.account_created,
-							   "spendable" : key_amount}, indent=4)
-		else:
-			return json.dumps({"name" : self.name, "lastname" : self.lastname,
-							   "email" : self.email, "passwd" : self.passwd,
-							   "account_index" : self.account_index,
-							   "wallet-balance" : balance,
-							   "status": "active",
-							   "public_key": self.public_key,
-							   "date": self.account_created}, indent=4)
+		return json.dumps({"name" : self.name, "lastname" : self.lastname,
+						   "email" : self.email, "passwd" : self.passwd,
+						   "account_index" : self.account_index,
+						   "wallet-balance" : balance,
+						   "status": "active",
+						   "public_key": self.public_key,
+						   "date": self.account_created,
+						   "spendable" : key_amount}, indent=4)
+
 
 	def __get_all_keys(self):
 		# Get all of the key's in wallet. But don't forget the change key
