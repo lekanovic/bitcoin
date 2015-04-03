@@ -72,6 +72,8 @@ class AccountsDB(object):
 	def find_bitcoin_address(self, bitcoin_address):
 		search_str = '%s' % bitcoin_address
 		res = self.db.account.find({"spendable" : { '$regex' : search_str } })
+		if not res.count():
+			return ""
 		return dumps(res, indent=4)
 
 	def get_all_accounts(self):
