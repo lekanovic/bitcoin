@@ -13,6 +13,9 @@ import md5
 import json
 
 
+class InsufficientFunds(Exception):
+    pass
+
 # Test BIP32 wallet
 # https://dcpos.github.io/bip39/
 
@@ -208,8 +211,7 @@ class Account():
 		available_funds = sum(s.coin_value for s in to_spend)
 
 		if available_funds < (amount + fee):
-			print "Insufficient funds"
-			return TransactionCode.Insufficient_funds
+			raise InsufficientFunds("Insufficient funds")
 
 		print "The change is %d" % change
 
