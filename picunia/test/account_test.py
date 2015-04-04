@@ -1,7 +1,7 @@
 import unittest
 import sys
 sys.path.append('..')
-from account import Account
+from users.account import Account
 
 class AccountTestCase(unittest.TestCase):
 
