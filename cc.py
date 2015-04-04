@@ -1,10 +1,11 @@
 import argparse, sys
 import json
 import time
+import datetime
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.serialize import h2b
 from picunia.users.account import Account
-from picunia.database.accountDB import AccountsDB
+from picunia.database.storage import Storage
 from bson.json_util import dumps
 from pycoin.encoding import wif_to_secret_exponent
 from pycoin.tx.pay_to import build_hash160_lookup
@@ -77,12 +78,17 @@ def main(argv):
 	parser.add_argument("-d","--delete", action='store_true', help="Delete all accounts")
 	parser.add_argument("-f","--find", help="Find account by email")
 	parser.add_argument("-i","--index", help="Find account by index")
+	parser.add_argument("-t","--transactions", action='store_true', help="List all transactions")
 	parser.add_argument("-n","--number", action='store_true', help="Number of accounts")
 	parser.add_argument("-s","--send",
 		help="Send Satoshi from one email to another: from:to:amount. Ex bob sends alice 34000 Satoshi bob@hotmail.com:alice@gmail.com:34000")
 	args = parser.parse_args()
 
-	db = AccountsDB()
+	db = Storage()
+
+	if args.transactions:
+		for t in db.get_all_transactions():
+			print t
 
 	if args.index:
 		print db.find_account_index(args.index)
@@ -105,15 +111,28 @@ def main(argv):
 
 		addr = receiver.get_bitcoin_address()
 
-		if sender.has_unconfirmed_balance():
-			print "has_unconfirmed_balance, waiting for confirmation.."
-			while sender.has_unconfirmed_balance():
-				time.sleep(5)
+		if sender.has_unconfirmed_balance() or receiver.has_unconfirmed_balance():
+			print "has_unconfirmed_balance, cannot send right now"
+			exit(1)
 
 		tx_unsigned = sender.pay_to_address(addr,amount)
 
 		if not tx_unsigned is None:
 			tx_signed = sign_tx(sender, tx_unsigned, netcode)
+			d={}
+			d['from'] = from_email
+			d['to_addr'] = addr
+			d['to_email'] =  to_email
+			d['tx_id'] = tx_signed.id()
+			d['amount'] = amount
+			d['fee'] = tx_signed.fee()
+			d['unconfirmed'] = "True"
+			d['confirmations'] = -1
+			d['date'] = str( datetime.datetime.now() )
+			d['block'] = -1
+			print d
+			db.add_transaction(d)
+
 			sender.send_tx(tx_signed)
 		else:
 			print "Transaction failed"
