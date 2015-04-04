@@ -43,7 +43,6 @@ class AccountsDB(object):
 
 	def update_balance(self, account, new_balance):
 		res = self.__find_account(account)
-		print (res)
 		# Update balance for a specific account
 		self.db.account.update({'_id': res['_id']},
 			{'$set': {'wallet-balance': new_balance}},upsert=False, multi=False)
