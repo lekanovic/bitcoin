@@ -70,11 +70,8 @@ class AccountsDB(object):
 		return dumps(res, indent=4)
 
 	def find_bitcoin_address(self, bitcoin_address):
-		res = self.db.account.find({"spendable.public_address" : bitcoin_address })
-		if res.count() == 0:
-			return ""
-		elif res.count() > 1:
-			raise ValueError("Two key's exist in two different wallets. This is wrong")
+		res = self.db.account.find_one({"spendable.public_address" : bitcoin_address })
+
 		return dumps(res, indent=4)
 
 	def get_all_accounts(self):
