@@ -2,13 +2,13 @@ import unittest
 import sys
 import json
 sys.path.append('..')
-from database.accountDB import AccountsDB
+from picunia.database.storage import Storage
 from users.account import Account
 
 class BalanceTestCase(unittest.TestCase):
 
 	def test_check_balance(self):
-		db = AccountsDB()
+		db = Storage()
 
 		accounts = [json.loads(a) for a in db.get_all_accounts()]
 
