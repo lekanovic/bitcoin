@@ -37,20 +37,25 @@ class AccountsDB(object):
 		self.db.account.insert(account)
 		return True
 
+	def __find_account(self, account):
+		res = self.db.account.find_one({"email" : account['email']})
+		return res
+
 	def update_balance(self, account, new_balance):
-		res = self.find_account(account)
+		res = self.__find_account(account)
+		print (res)
 		# Update balance for a specific account
 		self.db.account.update({'_id': res['_id']},
 			{'$set': {'wallet-balance': new_balance}},upsert=False, multi=False)
 
 	def update_passwd(self, account, new_passwd):
-		res = self.find_account(account)
+		res = self.__find_account(account)
 		# Update balance for a specific account
 		self.db.account.update({'_id': res['_id']},
 			{'$set': {'passwd': new_passwd}},upsert=False, multi=False)
 
 	def update_status(self, account, new_status):
-		res = self.find_account(account)
+		res = self.__find_account(account)
 		# Update balance for a specific account
 		self.db.account.update({'_id': res['_id']},
 			{'$set': {'status': new_status}},upsert=False, multi=False)
