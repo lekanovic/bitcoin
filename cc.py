@@ -126,11 +126,10 @@ def main(argv):
 			d['tx_id'] = tx_signed.id()
 			d['amount'] = amount
 			d['fee'] = tx_signed.fee()
-			d['unconfirmed'] = "True"
 			d['confirmations'] = -1
 			d['date'] = str( datetime.datetime.now() )
 			d['block'] = -1
-			print d
+
 			db.add_transaction(d)
 
 			sender.send_tx(tx_signed)
