@@ -99,8 +99,22 @@ class Storage(object):
 		res = self.dbt.transaction.find_one({"tx_id" : transaction['tx_id']})
 		return dumps(res, indent=4)
 
+	def update_transaction(self, transaction):
+		res = self.dbt.transaction.find_one({"tx_id" : transaction['tx_id']})
+
+		self.dbt.transaction.update({'_id': res['_id']},
+			{'$set': {'confirmations': transaction['confirmations']}},upsert=False, multi=False)
+
+		self.dbt.transaction.update({'_id': res['_id']},
+			{'$set': {'block': transaction['block']}},upsert=False, multi=False)
+
+	def get_unconfirmed_transactions(self, confirms=0):
+		return [dumps(res, indent=4) for transaction in
+				self.dbt.transaction.find({"confirmations" : {"$lt" : confirms}})]
+
 	def get_all_transactions(self):
-		return [dumps(transaction, indent=4) for transaction in self.dbt.transaction.find()]
+		return [dumps(transaction, indent=4) for transaction in
+				self.dbt.transaction.find()]
 
 doc1 = {
 		"name": "Radovan",
@@ -125,9 +139,28 @@ doc2 = {
 		"public_key": "tpubDCVcrTzunZwuc67hSQHmjHN8efpCVw4aZDUqvztyryj8QDpsvjxipein85QKt3ZuWXGapnuYVBEUGyvAQMJBNpruqxqStQ5RdrLhRCzNtuc",
 		"date":  str( datetime.datetime.now() )
 		}
+d = {}
+d['from'] = "ethel.herrera14@example.com"
+d['to_addr'] = "mojERYaVYcXPkUhXGEFMcJ3srXGGfN31gR"
+d['to_email'] =  "riley.sims25@example.com"
+d['tx_id'] = "d42f6f4d47ea9053b84fa2acdb01b247575c7f103bb5ca4e968d8d1d5ef993e9"
+d['amount'] = 22830
+d['fee'] = 10000
+d['confirmations'] = 10
+d['date'] = "2015-04-04 14:49:34.006587"
+d['block'] = 370000
+
 
 '''
+import json
 a = Storage()
+a.update_transaction(d)
+
+for j in a.get_unconfirmed_transactions():
+	print j
+
+
+
 
 print a.add_account(doc1)
 print a.add_account(doc2)
