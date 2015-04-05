@@ -1,13 +1,15 @@
 from pycoin.key import Key
 from pycoin.tx.pay_to import ScriptMultisig
 from pycoin.tx import Tx, TxIn, TxOut, tx_utils
-from pycoin.serialize import b2h, h2b, b2h_rev
+from pycoin.serialize import b2h, h2b, b2h_rev, h2b_rev
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.tx.pay_to import address_for_pay_to_script, build_hash160_lookup, build_p2sh_lookup
 from pycoin.services.insight import InsightService
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
-from picunia.database.accountDB import AccountsDB
+from picunia.database.storage import Storage
+from picunia.users.account import Account
 import time
+import json
 
 netcode="XTN"
 network="testnet"
@@ -76,31 +78,93 @@ addr = ["mn9ALd5MGqLbWnswpwJy6MtkpiAKvQEC3n",
 		"miU7fUgT97h63WaPX9LNpQs23QB1Dhd6mg",
 		"mxnEPXCb6NbPGtg3iFdjUHnuQag9RhUDPv"]
 
-db = AccountsDB()
-
+'''
 insight = InsightService("http://localhost:3001")
+tip_hash = insight.get_blockchain_tip()
+cur = b2h_rev(tip_hash)
+blockheader, tx_hashes = insight.get_blockheader_with_transaction_hashes(tip_hash)
+db_tx = TransactionDB()
+
+for t in tx_hashes:			
+	#print b2h_rev(t)
+	hex_tx = b2h_rev(t)
+	print hex_tx
+
+	print insight.get_tx(t)
+
+for t in db_tx.get_all_transactions():
+	print t
+
+exit(1)
+
+# ///////////////////////////////////////////
+db = Storage()
+
+account_json = json.loads(db.find_bitcoin_address("mxnEPXCb6NbPGtg3iFdjUHnuQag9RhUDPv"))
+
+print type(db.find_account("cory.kennedy47@example.com"))
+
+a = Account.from_json(account_json, network="testnet")
+print a.wallet_balance()
+print account_json['wallet-balance']
+print account_json['email']
+db.update_balance(account_json, a.wallet_balance())
+
+tx_ids = [ json.loads(t)['tx_id'] for t in db.get_all_transactions()]
+#print db.find_account(account_json)
+for a in db.get_all_accounts():
+	print json.loads(a)['email']
+
+for t in db.get_all_transactions():
+	print json.loads(t)['tx_id']
+
+for t in tx_ids:
+	print t
+
+exit(1)
+'''
+#db = Storage()
+insight = InsightService("http://localhost:3001")
+a = insight.get_tx_dict("06a804643e6692053bb965fb64f8e69b8c61aacec95e71091d741be1d83e8330")
+print a
+
+#print insight.get_tx(h2b_rev("58b41edd998044196555784667c7fda38e1d2749dd7ef8d27f329c610c8c19b9"))
+exit(1)
+
 tmp=0
 while True:
 	tip_hash = insight.get_blockchain_tip()
 	cur = b2h_rev(tip_hash)
 	if cur != tmp:
 		blockheader, tx_hashes = insight.get_blockheader_with_transaction_hashes(tip_hash)
-		#print blockheader
-		for t in tx_hashes:
-			#print b2h_rev(t)
+		print blockheader
+
+		for t in tx_hashes:			
+			print b2h_rev(t)
+			hex_tx = b2h_rev(t)
+			tx_ids = [ json.loads(p)['tx_id'] for p in db.get_all_transactions()]
+			#if hex_tx in tx_ids:
+			print "Transaction made from our users"
+			print hex_tx
 			tx = insight.get_tx(t)
-			#print "tx_in:"
+			print tx
 			for t in tx.txs_in:
-				#print t.bitcoin_address(netcode)
+				#print "Sending bitcoins %s" % t.bitcoin_address(netcode)
 				account = db.find_bitcoin_address(t.bitcoin_address(netcode))
-				if account:
-					print account
+				if not account:
+					account_json = json.loads(account)							
+					print "Receiving bitcoins %s" % account_json['email']
+					a = Account.from_json(account_json, network="testnet")
+					db.update_balance(account_json, a.wallet_balance())
 			#print "tx_out:"
 			for t in tx.txs_out:
-				#print t.bitcoin_address(netcode)
+				#print "Receiving bitcoins %s" % t.bitcoin_address(netcode)
 				account = db.find_bitcoin_address(t.bitcoin_address(netcode))
-				if account:
-					print account
+				if not account:
+					account_json = json.loads(account)
+					print "Receiving bitcoins %s" % account_json['email']
+					a = Account.from_json(account_json, network="testnet")
+					db.update_balance(account_json, a.wallet_balance())
 			#print repr(tx)
 	tmp = cur
 	time.sleep(5)
