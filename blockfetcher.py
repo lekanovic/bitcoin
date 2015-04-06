@@ -3,10 +3,12 @@ from picunia.users.account import Account
 from pycoin.services.insight import InsightService
 from pycoin.serialize import b2h_rev
 from pycoin.tx import Tx, TxIn, TxOut, tx_utils
-from daemon import runner
+#from daemon import runner
 import os
 import time
 import json
+
+
 # http://nanvel.name/weblog/python-unix-daemon/
 class BlockchainFetcher():
 
@@ -23,18 +25,18 @@ class BlockchainFetcher():
 
 	def check_inputs_outputs(self, tx):
 		for t1 in tx.txs_in:
-			account = self.db.find_bitcoin_address(t1.bitcoin_address(self.netcode))
-			if not account:
-				account_json = json.loads(account)
+			account_json = json.loads(self.db.find_bitcoin_address(t1.bitcoin_address(self.netcode)))
+			if account_json:
 				print "Receiving bitcoins %s" % account_json['email']
 				a = Account.from_json(account_json, network="testnet")
+				print "Old balance %d New balance %d" % (account_json['wallet-balance'], a.wallet_balance())
 				self.db.update_balance(account_json, a.wallet_balance())
 		for t2 in tx.txs_out:
-			account = self.db.find_bitcoin_address(t2.bitcoin_address(self.netcode))
-			if not account:
-				print "Receiving bitcoins %s" % t2.bitcoin_address(self.netcode)
-				account_json = json.loads(account)
+			account_json = json.loads(self.db.find_bitcoin_address(t2.bitcoin_address(self.netcode)))
+			if account_json:
+				print "Sending bitcoins %s" % t2.bitcoin_address(self.netcode)
 				a = Account.from_json(account_json, network="testnet")
+				print "Old balance %d New balance %d" % (account_json['wallet-balance'], a.wallet_balance())
 				self.db.update_balance(account_json, a.wallet_balance())
 
 	def update_transactions(self, block_height):
@@ -50,7 +52,7 @@ class BlockchainFetcher():
 		while True:
 			tip_hash = self.insight.get_blockchain_tip()
 			current_block = b2h_rev(tip_hash)
-			if current_block != previous_block:
+			if current_block != previous_block: # A new block has been accepted in the blockchain
 				blockheader, tx_hashes = self.insight.get_blockheader_with_transaction_hashes(tip_hash)
 				print blockheader
 
