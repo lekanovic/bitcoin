@@ -7,7 +7,7 @@ import urllib, json
 import json
 
 
-def fill_database(items=1):
+def call_api(items=0):
     url = "http://api.randomuser.me/?results=%d" % items
     response = urllib.urlopen(url);
     data = json.loads(response.read())
@@ -18,6 +18,17 @@ def fill_database(items=1):
         passwd = d["user"]["password"]
         email = d["user"]["email"]
         add_account(name, lastname, email, passwd)
+
+def fill_database(items=1):
+    if items <= 100:
+        call_api(items)
+    else:
+        n = items / 100
+        for p in range(n):
+            call_api(100)
+        r = items % 100
+        if r > 0:
+            call_api(r)
 
 def find_account_index(index):
     cmd = "python cc.py -i %s" % index
