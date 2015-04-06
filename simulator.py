@@ -7,18 +7,17 @@ import urllib, json
 import json
 
 
-
-def fill_database():
-    url = "http://api.randomuser.me"
+def fill_database(items=1):
+    url = "http://api.randomuser.me/?results=%d" % items
     response = urllib.urlopen(url);
     data = json.loads(response.read())
 
-    name = data["results"][0]["user"]["name"]["first"]
-    lastname = data["results"][0]["user"]["name"]["last"]
-    passwd = data["results"][0]["user"]["password"]
-    email = data["results"][0]["user"]["email"]
-
-    add_account(name, lastname, email, passwd)
+    for d in data['results']:
+        name = d["user"]["name"]["first"]
+        lastname = d["user"]["name"]["last"]
+        passwd = d["user"]["password"]
+        email = d["user"]["email"]
+        add_account(name, lastname, email, passwd)
 
 def find_account_index(index):
     cmd = "python cc.py -i %s" % index
@@ -62,9 +61,7 @@ def find_random_account():
     return find_account_index(rnd)
 
 def generate_accounts(n):
-    nr = get_number_of_accounts()
-    for idx in range(nr, nr+n):
-        fill_database()
+    fill_database(n)
 
 def one_round():
     sender, balance = find_account_with_balance()
