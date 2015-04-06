@@ -60,12 +60,10 @@ def get_all_accounts():
     return json.loads(out)['accounts']
 
 def find_account_with_balance():
-    a=[]
-    for d in get_all_accounts():
-        if d['wallet-balance'] > 0:
-            a.append(d)
-    index = random.randrange(0, len(a))
-    return a[index], a[index]['wallet-balance']
+    while True:
+        account = find_random_account()
+        if account['wallet-balance'] > 0:
+            return account, account['wallet-balance']
 
 def find_random_account():
     rnd = str(random.randrange(0, get_number_of_accounts()))
