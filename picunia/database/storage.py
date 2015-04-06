@@ -109,7 +109,7 @@ class Storage(object):
 			{'$set': {'block': transaction['block']}},upsert=False, multi=False)
 
 	def get_unconfirmed_transactions(self, confirms=0):
-		return [dumps(res, indent=4) for transaction in
+		return [dumps(transaction, indent=4) for transaction in
 				self.dbt.transaction.find({"confirmations" : {"$lt" : confirms}})]
 
 	def get_all_transactions(self):
