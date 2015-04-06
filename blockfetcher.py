@@ -55,8 +55,6 @@ class BlockchainFetcher():
 			if current_block != previous_block: # A new block has been accepted in the blockchain
 				blockheader, tx_hashes = self.insight.get_blockheader_with_transaction_hashes(tip_hash)
 				print blockheader
-
-				self.update_transactions(blockheader.height)
 				'''
 				Get all tx ids from the new block. Check if we have unconfirmed tx and compare
 				those with to the one's in the new block. If we find a match update our database.
@@ -69,7 +67,7 @@ class BlockchainFetcher():
 						print "Transaction made from our wallets"
 						tx = self.insight.get_tx(t1)
 						self.check_inputs_outputs(tx)
-
+				self.update_transactions(blockheader.height)
 			previous_block = current_block
 			time.sleep(5)
 
