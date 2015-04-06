@@ -61,7 +61,7 @@ class BlockchainFetcher():
 				Get all tx ids from the new block. Check if we have unconfirmed tx and compare
 				those with to the one's in the new block. If we find a match update our database.
 				'''
-				tx_ids = [ json.loads(p)['tx_id'] for p in self.get_unconfirmed_transactions()]
+				tx_ids = [ json.loads(p)['tx_id'] for p in self.db.get_unconfirmed_transactions()]
 
 				for t1 in tx_hashes:
 					hex_tx = b2h_rev(t1)
