@@ -78,6 +78,8 @@ def main(argv):
 	parser.add_argument("-d","--delete", action='store_true', help="Delete all accounts")
 	parser.add_argument("-f","--find", help="Find account by email")
 	parser.add_argument("-i","--index", help="Find account by index")
+	parser.add_argument("-p","--proofofexsitens",
+		help="Create an proof of existens. EX: bob@hotmail.com:'This string will end up in the blockchain'")
 	parser.add_argument("-t","--transactions", action='store_true', help="List all transactions")
 	parser.add_argument("-n","--number", action='store_true', help="Number of accounts")
 	parser.add_argument("-s","--send",
@@ -85,6 +87,39 @@ def main(argv):
 	args = parser.parse_args()
 
 	db = Storage()
+
+	if args.proofofexsitens:
+		s = args.proofofexsitens.split(":")
+		from_email = s[0]
+		proofofexistens_msg = s[1]
+
+		# Find the user in database
+		sender = json.loads(db.find_account(from_email))
+		# Add the user to Account object
+		sender = Account.from_json(sender,network)
+
+		tx_unsigned = sender.proof_of_existens(proofofexistens_msg)
+
+		tx_signed = sign_tx(sender, tx_unsigned, netcode)
+
+		if not tx_unsigned is None:
+			tx_signed = sign_tx(sender, tx_unsigned, netcode)
+			d={}
+			d['from'] = from_email
+			d['to_addr'] = "N/A"
+			d['to_email'] =  "N/A"
+			d['tx_id'] = tx_signed.id()
+			d['amount'] = 10000
+			d['fee'] = tx_signed.fee()
+			d['confirmations'] = -1
+			d['date'] = str( datetime.datetime.now() )
+			d['block'] = -1
+
+			db.add_transaction(d)
+
+			sender.send_tx(tx_signed)
+		else:
+			print "Transaction failed"
 
 	if args.transactions:
 		for t in db.get_all_transactions():
