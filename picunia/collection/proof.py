@@ -14,7 +14,6 @@ class ProofOfExistence():
 							for i in range(0, len(self.contract), MAX_MESSAGE_SIZE)]
 
 		for chunk in chunks_40_bytes:
-			print chunk, len(chunk)
 			script = ScriptOPReturn(chunk).script()
 			self.transaction_out.append(TxOut(self.amount, script))
 
