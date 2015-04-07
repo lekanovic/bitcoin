@@ -5,7 +5,24 @@ import os
 import subprocess
 import urllib, json
 import json
+from random import randint
 
+
+def get_chucknorris_joke():
+    url = "http://api.icndb.com/jokes/random"
+    response = urllib.urlopen(url);
+    data = json.loads(response.read())
+    return data['value']['joke']
+
+def send_chucknorris_joke_as_proofofexistens(sender):
+    joke = get_chucknorris_joke()
+    cmd = "python cc.py -p %s:\"%s\"" % (sender['email'], joke)
+
+    proc = subprocess.Popen([cmd],
+                    stdout=subprocess.PIPE, shell=True)
+    (out, err) = proc.communicate()
+
+    print out
 
 def call_api(items=0):
     url = "http://api.randomuser.me/?results=%d" % items
@@ -77,8 +94,10 @@ def one_round():
     receiver = find_random_account()
     amount = balance / 10
 
-    print "%s sending %d to %s" % (sender['email'], amount, receiver['email'])
+    if randint(0,9) == 5:
+        send_chucknorris_joke_as_proofofexistens(sender)
 
+    print "%s sending %d to %s" % (sender['email'], amount, receiver['email'])
     send_from_to(sender['email'], receiver['email'], amount)
 
 def send_from_to(from_email, to_email, amount):
