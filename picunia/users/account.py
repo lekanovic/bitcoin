@@ -8,6 +8,7 @@ from pycoin.tx.pay_to import address_for_pay_to_script, ScriptMultisig
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.tx_utils import distribute_from_split_pool
 from pycoin.convention import tx_fee
+from picunia.collection.proof import ProofOfExistence
 import datetime
 import md5
 import json
@@ -252,6 +253,42 @@ class Account():
 		if recommended_fee != fee:
 			print "Recommended fee %d but using %d" % (recommended_fee, fee)
 			tx = self.__pay_with_fee(to_addr, amount, recommended_fee)
+
+		return tx
+
+	def proof_of_existens(self, message, fee=10000):
+		amount = 10000
+		spendables = self.insight.spendables_for_addresses(self.__get_all_keys())
+
+		to_spend, change = self.__greedy(spendables, amount + fee)
+
+		print "The change is %d" % change
+		print "Wallet balance %s" % self.wallet_balance()
+		txs_in = [spendable.tx_in() for spendable in to_spend]
+
+		# Create 40 bytes packages from the message that we want to
+		# embed in the transaction.
+		txs_out = []
+		txs_out.extend(ProofOfExistence(message).generate_txout())
+
+		script = standard_tx_out_script(self.get_bitcoin_address())
+		txs_out.append(TxOut(amount, script))
+
+		# Return the change back to our wallet if there is any change.
+		if change > 0:
+			script = standard_tx_out_script(self.key_change.address())
+			txs_out.append(TxOut(change, script))
+
+		tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out, lock_time=0)
+		tx.set_unspents(to_spend)
+
+		if tx.fee() == 0:
+			raise InsufficientFunds("No fee added, must have fee")
+
+		print "Transaction fee %d" % tx.fee()
+		t = tx.as_hex(include_unspents=True)
+		print t
+		print "Transaction size %d unsigned" % len(t)
 
 		return tx
 
