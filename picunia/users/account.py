@@ -205,13 +205,20 @@ class Account():
 		print "Pay %d to %s" % (amount, to_addr)
 		spendables = self.insight.spendables_for_addresses(self.__get_all_keys())
 
+		available_funds = sum(s.coin_value for s in spendables)
+
+		if available_funds < (amount + fee):
+			msg = "Available %d trying to spend %d " % (available_funds, amount + fee)
+			raise InsufficientFunds(msg)
+
 		# Get spendables including fee
 		to_spend, change = self.__greedy(spendables, amount + fee)
 
 		available_funds = sum(s.coin_value for s in to_spend)
 
 		if available_funds < (amount + fee):
-			raise InsufficientFunds("Insufficient funds")
+			msg = "Available %d trying to spend %d " % (available_funds, amount + fee)
+			raise InsufficientFunds(msg)
 
 		print "The change is %d" % change
 
