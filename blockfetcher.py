@@ -42,7 +42,12 @@ class BlockchainFetcher():
 	def update_transactions(self, block_height):
 		for unconf_tx in self.db.get_all_transactions():
 			unconf_tx = json.loads(unconf_tx)['tx_id']
-			tx_dict = self.insight.get_tx_dict(unconf_tx)
+			tx_dict = {}
+			try:
+				tx_dict = self.insight.get_tx_dict(unconf_tx)
+			except:
+				print "WARNING Transaction %s has not made it onto blockchain" % unconf_tx
+				continue
 			tx_dict['tx_id'] = unconf_tx
 			tx_dict['block'] = block_height
 			self.db.update_transaction(tx_dict)
