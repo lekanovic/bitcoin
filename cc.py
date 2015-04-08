@@ -83,11 +83,61 @@ def main(argv):
 		help="Create an proof of existens. EX: bob@hotmail.com:'This string will end up in the blockchain'")
 	parser.add_argument("-t","--transactions", action='store_true', help="List all transactions")
 	parser.add_argument("-n","--number", action='store_true', help="Number of accounts")
+	parser.add_argument("-m","--multisig",
+		help="Create a multisigtransaction: from:to:escrow:amount. Ex bob@hotmail.com:alice@gmail.com:escrow@lawyer.com:34000")
 	parser.add_argument("-s","--send",
 		help="Send Satoshi from one email to another: from:to:amount. Ex bob sends alice 34000 Satoshi bob@hotmail.com:alice@gmail.com:34000")
 	args = parser.parse_args()
 
 	db = Storage()
+
+	if args.multisig:
+		s = args.multisig.split(":")
+		from_email = s[0]
+		to_email = s[1]
+		escrow = s[2]
+		amount = int(s[3])
+
+		sender = json.loads(db.find_account(from_email))
+		receiver = json.loads(db.find_account(to_email))
+		escrow = json.loads(db.find_account(escrow))
+
+		sender = Account.from_json(sender,network)
+		receiver = Account.from_json(receiver,network)
+		escrow = Account.from_json(escrow,network)
+
+		keys = []
+		keys.append(sender.get_key(0))
+		keys.append(receiver.get_key(0))
+		keys.append(escrow.get_key(0))
+
+		tx_multi_unsigned, multi_address = sender.multisig_2_of_3(keys)
+
+		# Now that we have created the multisig address let's send some money to it
+		if sender.has_unconfirmed_balance():
+			print "has_unconfirmed_balance, cannot send right now"
+			exit(1)
+
+		tx_unsigned = sender.pay_to_address(multi_address,amount)
+
+		if not tx_unsigned is None:
+			tx_signed = sign_tx(sender, tx_unsigned, netcode)
+			d={}
+			d['from'] = from_email
+			d['to_addr'] = multi_address
+			d['to_email'] =  to_email
+			d['tx_id'] = tx_signed.id()
+			d['amount'] = amount
+			d['fee'] = tx_signed.fee()
+			d['confirmations'] = -1
+			d['date'] = str( datetime.datetime.now() )
+			d['block'] = -1
+
+			db.add_transaction(d)
+
+			sender.send_tx(tx_signed)
+		else:
+			print "Transaction failed"
 
 	if args.findtransaction:
 		tx_id = {}
