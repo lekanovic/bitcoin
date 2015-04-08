@@ -4,7 +4,7 @@ import time
 import datetime
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.serialize import h2b
-from picunia.users.account import Account
+from picunia.users.account import Account, InsufficientFunds
 from picunia.database.storage import Storage
 from bson.json_util import dumps
 from pycoin.encoding import wif_to_secret_exponent
@@ -97,6 +97,7 @@ def main(argv):
 		to_email = s[1]
 		escrow = s[2]
 		amount = int(s[3])
+		tx_unsigned = 0
 
 		sender = json.loads(db.find_account(from_email))
 		receiver = json.loads(db.find_account(to_email))
@@ -118,7 +119,17 @@ def main(argv):
 			print "has_unconfirmed_balance, cannot send right now"
 			exit(1)
 
-		tx_unsigned = sender.pay_to_address(multi_address,amount)
+		try:
+			tx_unsigned = sender.pay_to_address(multi_address,amount)
+		except InsufficientFunds:
+			balance = sender.wallet_balance()
+			a = json.loads(db.find_account(from_email))
+			if a['wallet-balance'] != balance:
+				print "Updating balance from %d to %d" % (a['wallet-balance'], balance)
+				db.update_balance(a, balance)
+			else:
+				print "Transaction failed amount too small.."
+			exit(1)
 
 		if not tx_unsigned is None:
 			tx_signed = sign_tx(sender, tx_unsigned, netcode)
@@ -192,6 +203,7 @@ def main(argv):
 		from_email = s[0]
 		to_email = s[1]
 		amount = int(s[2])
+		tx_unsigned = 0
 
 		sender = json.loads(db.find_account(from_email))
 
@@ -206,7 +218,17 @@ def main(argv):
 			print "has_unconfirmed_balance, cannot send right now"
 			exit(1)
 
-		tx_unsigned = sender.pay_to_address(addr,amount)
+		try:
+			tx_unsigned = sender.pay_to_address(addr,amount)
+		except InsufficientFunds:
+			balance = sender.wallet_balance()
+			a = json.loads(db.find_account(from_email))
+			if a['wallet-balance'] != balance:
+				print "Updating balance from %d to %d" % (a['wallet-balance'], balance)
+				db.update_balance(a, balance)
+			else:
+				print "Transaction failed amount too small.."
+			exit(1)
 
 		if not tx_unsigned is None:
 			tx_signed = sign_tx(sender, tx_unsigned, netcode)
