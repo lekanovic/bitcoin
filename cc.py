@@ -78,6 +78,7 @@ def main(argv):
 	parser.add_argument("-d","--delete", action='store_true', help="Delete all accounts")
 	parser.add_argument("-f","--find", help="Find account by email")
 	parser.add_argument("-i","--index", help="Find account by index")
+	parser.add_argument("-c","--findtransaction", help="Find transaction by transaction id")
 	parser.add_argument("-p","--proofofexsitens",
 		help="Create an proof of existens. EX: bob@hotmail.com:'This string will end up in the blockchain'")
 	parser.add_argument("-t","--transactions", action='store_true', help="List all transactions")
@@ -87,6 +88,11 @@ def main(argv):
 	args = parser.parse_args()
 
 	db = Storage()
+
+	if args.findtransaction:
+		tx_id = {}
+		tx_id['tx_id'] = args.findtransaction
+		print db.find_transaction(tx_id)
 
 	if args.proofofexsitens:
 		s = args.proofofexsitens.split(":")
