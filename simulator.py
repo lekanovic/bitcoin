@@ -7,12 +7,19 @@ import urllib, json
 import json
 from random import randint
 
+joke_database = []
 
-def get_chucknorris_joke():
-    url = "http://api.icndb.com/jokes/random"
+def fetch_jokes():
+    url = "http://api.icndb.com/jokes/random/1000"
     response = urllib.urlopen(url);
     data = json.loads(response.read())
-    return data['value']['joke']
+    for i in data['value']:
+		joke_database.append(i['joke'])
+
+def get_chucknorris_joke():
+	if not joke_database:
+		fetch_jokes()
+	return joke_database.pop()
 
 def send_chucknorris_joke_as_proofofexistens(sender):
     joke = get_chucknorris_joke()
