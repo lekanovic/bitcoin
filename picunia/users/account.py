@@ -308,7 +308,7 @@ class Account():
 		address = address_for_pay_to_script(script, self.netcode)
 		print "Multisig address: %s" % address
 
-		tx_out = TxOut(1000000, script)
+		tx_out = TxOut(10000, script)
 		tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
 
 		print tx1.as_hex(include_unspents=True)
