@@ -31,6 +31,16 @@ def send_chucknorris_joke_as_proofofexistens(sender):
 
     print out
 
+def multisig_transacion(sender, receiver, escrow, amount):
+    cmd = "python cc.py -m %s:%s:%s:%d" % (sender, receiver, escrow,  amount)
+
+    print sender
+    proc = subprocess.Popen([cmd],
+                    stdout=subprocess.PIPE, shell=True)
+    (out, err) = proc.communicate()
+
+    print out
+
 def call_api(items=0):
     url = "http://api.randomuser.me/?results=%d" % items
     response = urllib.urlopen(url);
@@ -101,8 +111,12 @@ def one_round():
     receiver = find_random_account()
     amount = balance / 10
 
-    if randint(0,9) == 5:
+    if randint(0,20) == 10:
         send_chucknorris_joke_as_proofofexistens(sender)
+
+    if randint(0,20) == 10:
+        escrow = find_random_account()
+        multisig_transacion(sender['email'], receiver['email'], escrow['email'], amount)
 
     print "%s sending %d to %s" % (sender['email'], amount, receiver['email'])
     send_from_to(sender['email'], receiver['email'], amount)
