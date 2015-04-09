@@ -2,6 +2,7 @@ import unittest
 import sys
 import json
 sys.path.append('..')
+sys.path.append('../..')
 from database.storage import Storage
 from users.account import Account
 
