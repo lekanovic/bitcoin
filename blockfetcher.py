@@ -7,7 +7,7 @@ from pycoin.tx import Tx, TxIn, TxOut, tx_utils
 import os
 import time
 import json
-
+import thread
 
 # http://nanvel.name/weblog/python-unix-daemon/
 class BlockchainFetcher():
@@ -54,6 +54,7 @@ class BlockchainFetcher():
 
 	def run(self):
 		previous_block=0
+		print "Starting blockchain fetcher..."
 		while True:
 			tip_hash = self.insight.get_blockchain_tip()
 			current_block = b2h_rev(tip_hash)
@@ -70,11 +71,29 @@ class BlockchainFetcher():
 					hex_tx = b2h_rev(t1)
 					if hex_tx in tx_ids:
 						print "Transaction made from our wallets"
+						print hex_tx
 						tx = self.insight.get_tx(t1)
 						self.check_inputs_outputs(tx)
 				self.update_transactions(blockheader.height)
 			previous_block = current_block
 			time.sleep(5)
+
+def sync_all_accounts(threadName, delay):
+	db = Storage()
+	n = db.get_number_of_accounts()-1
+	print "Syncing all accounts.."
+	for index in range(0, n):
+		account_json = json.loads(db.find_account_index(str(index)))
+		a = Account.from_json(account_json, network="testnet")
+		if a.wallet_balance() != account_json['wallet-balance']:
+			print "Old balance %d New balance %d" % (account_json['wallet-balance'], a.wallet_balance())
+			db.update_balance(account_json, a.wallet_balance())
+	print "DONE! syncing all accounts.."
+
+try:
+	thread.start_new_thread(sync_all_accounts, ("Sync-account-thread", 2))
+except:
+   print "Error: unable to start thread"
 
 app = BlockchainFetcher()
 app.run()
