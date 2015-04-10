@@ -126,7 +126,7 @@ def main(argv):
 			a = json.loads(db.find_account(from_email))
 			if a['wallet-balance'] != balance:
 				print "Updating balance from %d to %d" % (a['wallet-balance'], balance)
-				db.update_balance(a, balance)
+				db.update_account(a)
 			else:
 				print "Transaction failed amount too small.."
 			exit(1)
@@ -225,7 +225,8 @@ def main(argv):
 			a = json.loads(db.find_account(from_email))
 			if a['wallet-balance'] != balance:
 				print "Updating balance from %d to %d" % (a['wallet-balance'], balance)
-				db.update_balance(a, balance)
+				#db.update_balance(a, balance)
+				db.update_account(sender.to_json())
 			else:
 				print "Transaction failed amount too small.."
 			exit(1)
