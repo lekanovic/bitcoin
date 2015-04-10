@@ -75,7 +75,7 @@ def main(argv):
 	parser = argparse.ArgumentParser(description="Command and Control for accounts")
 	parser.add_argument("-a","--add", help="Create new account: name:lastname:email:password")
 	parser.add_argument("-l","--list", action='store_true', help="List all accounts")
-	parser.add_argument("-d","--delete", action='store_true', help="Delete all accounts")
+	parser.add_argument("-d","--delete", help="Delete all accounts. Ex cc -d transaction|account|all")
 	parser.add_argument("-f","--find", help="Find account by email")
 	parser.add_argument("-i","--index", help="Find account by index")
 	parser.add_argument("-c","--findtransaction", help="Find transaction by transaction id")
@@ -262,7 +262,12 @@ def main(argv):
 			print res
 
 	if args.delete:
-		db.drop_database()
+		if args.delete == "account":
+			db.drop_database(which="account")
+		elif args.delete == "transaction":
+			db.drop_database(which="transaction")
+		elif args.delete == "all":
+			db.drop_database()
 
 	if args.list:
 		print "{\"accounts\" : ["
