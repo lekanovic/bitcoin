@@ -42,6 +42,10 @@ class Storage(object):
 		res = self.dba.account.find_one({"email" : account['email']})
 		return res
 
+	def update_account(self, account):
+		res = self.__find_account(account)
+		self.dba.account.update({'_id': res['_id']}, account,upsert=False, multi=False)
+
 	def update_balance(self, account, new_balance):
 		res = self.__find_account(account)
 		# Update balance for a specific account
