@@ -89,9 +89,14 @@ class Storage(object):
 	def get_number_of_accounts(self):
 		return self.dba.account.count()
 
-	def drop_database(self):
-		self.dba.account.drop()
-		self.dbt.transaction.drop()
+	def drop_database(self, which="all"):
+		if which == "all":
+			self.dba.account.drop()
+			self.dbt.transaction.drop()
+		elif which == "account":
+			self.dba.account.drop()
+		elif which == "transaction":
+			self.dbt.transaction.drop()
 
 	def add_transaction(self, transaction):
 		'''
