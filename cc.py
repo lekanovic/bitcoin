@@ -137,12 +137,14 @@ def main(argv):
 			d['from'] = from_email
 			d['to_addr'] = multi_address
 			d['to_email'] =  to_email
+			d['escrow'] = escrow
 			d['tx_id'] = tx_signed.id()
 			d['amount'] = amount
 			d['fee'] = tx_signed.fee()
 			d['confirmations'] = -1
 			d['date'] = str( datetime.datetime.now() )
 			d['block'] = -1
+			d['type'] = "MULTISIG"
 
 			db.add_transaction(d)
 
@@ -181,6 +183,7 @@ def main(argv):
 			d['confirmations'] = -1
 			d['date'] = str( datetime.datetime.now() )
 			d['block'] = -1
+			d['type'] = "OPRETURN"
 
 			db.add_transaction(d)
 
@@ -243,6 +246,7 @@ def main(argv):
 			d['confirmations'] = -1
 			d['date'] = str( datetime.datetime.now() )
 			d['block'] = -1
+			d['type'] = "STANDARD"
 
 			db.add_transaction(d)
 
