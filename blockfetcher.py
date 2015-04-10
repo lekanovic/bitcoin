@@ -29,15 +29,18 @@ class BlockchainFetcher():
 			if account_json:
 				print "Sending bitcoins %s" % account_json['email']
 				a = Account.from_json(account_json, network="testnet")
-				print "Old balance %d New balance %d" % (account_json['wallet-balance'], a.wallet_balance())
-				self.db.update_account(a.to_json())
+				if a.wallet_balance() != account_json['wallet-balance']:
+					print "Old balance %d New balance %d" % (account_json['wallet-balance'], a.wallet_balance())
+					self.db.update_account( json.loads(a.to_json()) )
+
 		for t2 in tx.txs_out:
 			account_json = json.loads(self.db.find_bitcoin_address(t2.bitcoin_address(self.netcode)))
 			if account_json:
 				print "Receiving bitcoins %s" % t2.bitcoin_address(self.netcode)
 				a = Account.from_json(account_json, network="testnet")
-				print "Old balance %d New balance %d" % (account_json['wallet-balance'], a.wallet_balance())
-				self.db.update_account(a.to_json())
+				if a.wallet_balance() != account_json['wallet-balance']:
+					print "Old balance %d New balance %d" % (account_json['wallet-balance'], a.wallet_balance())
+					self.db.update_account( json.loads(a.to_json()) )
 
 	def update_transactions(self, block_height):
 		for unconf_tx in self.db.get_all_transactions():
@@ -87,7 +90,7 @@ def sync_all_accounts(threadName, delay):
 		a = Account.from_json(account_json, network="testnet")
 		if a.wallet_balance() != account_json['wallet-balance']:
 			print "Old balance %d New balance %d" % (account_json['wallet-balance'], a.wallet_balance())
-			db.update_account(a.to_json())
+			db.update_account( json.loads(a.to_json()) )
 	print "DONE! syncing all accounts.."
 
 try:
