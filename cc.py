@@ -63,6 +63,13 @@ def sign_tx(account, tx_unsigned, netcode):
 
 	return tx_signed
 
+def send_tx(sender, tx_signed):
+	tx_id = sender.send_tx(tx_signed)
+	if tx_signed.id() != tx_id:
+		print "STOP tx id no match %s vs %s" % (tx_id, tx_signed.id())
+		return False
+	return True
+
 def main(argv):
 	netcode="XTN"
 	network="testnet"
@@ -146,9 +153,8 @@ def main(argv):
 			d['block'] = -1
 			d['type'] = "MULTISIG"
 
+			send_tx(sender, tx_signed)
 			db.add_transaction(d)
-
-			sender.send_tx(tx_signed)
 		else:
 			print "Transaction failed"
 
@@ -159,6 +165,7 @@ def main(argv):
 
 	if args.proofofexsitens:
 		s = args.proofofexsitens.split(":")
+		tx_unsigned = 0
 		from_email = s[0]
 		proofofexistens_msg = s[1]
 
@@ -167,7 +174,17 @@ def main(argv):
 		# Add the user to Account object
 		sender = Account.from_json(sender,network)
 
-		tx_unsigned = sender.proof_of_existens(proofofexistens_msg)
+		try:
+			tx_unsigned = sender.proof_of_existens(proofofexistens_msg)
+		except InsufficientFunds:
+			balance = sender.wallet_balance()
+			a = json.loads(db.find_account(from_email))
+			if a['wallet-balance'] != balance:
+				print "Updating balance from %d to %d" % (a['wallet-balance'], balance)
+				db.update_account(a)
+			else:
+				print "Transaction failed amount too small.."
+			exit(1)
 
 		tx_signed = sign_tx(sender, tx_unsigned, netcode)
 
@@ -185,9 +202,8 @@ def main(argv):
 			d['block'] = -1
 			d['type'] = "OPRETURN"
 
+			send_tx(sender, tx_signed)
 			db.add_transaction(d)
-
-			sender.send_tx(tx_signed)
 		else:
 			print "Transaction failed"
 
@@ -229,7 +245,7 @@ def main(argv):
 			if a['wallet-balance'] != balance:
 				print "Updating balance from %d to %d" % (a['wallet-balance'], balance)
 				#db.update_balance(a, balance)
-				db.update_account(sender.to_json())
+				db.update_account(json.loads(sender.to_json()))
 			else:
 				print "Transaction failed amount too small.."
 			exit(1)
@@ -248,9 +264,8 @@ def main(argv):
 			d['block'] = -1
 			d['type'] = "STANDARD"
 
+			send_tx(sender, tx_signed)
 			db.add_transaction(d)
-
-			sender.send_tx(tx_signed)
 		else:
 			print "Transaction failed"
 
