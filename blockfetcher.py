@@ -8,6 +8,7 @@ import os
 import time
 import json
 import thread
+import datetime
 
 # http://nanvel.name/weblog/python-unix-daemon/
 class BlockchainFetcher():
@@ -84,6 +85,8 @@ class BlockchainFetcher():
 def sync_all_accounts(threadName, delay):
 	db = Storage()
 	n = db.get_number_of_accounts()-1
+
+	start_time = time.time()
 	print "Syncing all accounts.."
 	for index in range(0, n):
 		account_json = json.loads(db.find_account_index(str(index)))
@@ -91,7 +94,8 @@ def sync_all_accounts(threadName, delay):
 		if a.wallet_balance() != account_json['wallet-balance']:
 			print "Old balance %d New balance %d" % (account_json['wallet-balance'], a.wallet_balance())
 			db.update_account( json.loads(a.to_json()) )
-	print "DONE! syncing all accounts.."
+	delta = (time.time() - start_time)
+	print "DONE! syncing all accounts it took %s " %  str(datetime.timedelta(seconds=delta))
 
 try:
 	thread.start_new_thread(sync_all_accounts, ("Sync-account-thread", 2))
