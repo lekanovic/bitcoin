@@ -332,6 +332,7 @@ class Account():
 		'''
 
 	def send_tx(self, tx_signed):
+		ret = 0
 		t = tx_signed.as_hex(include_unspents=True)
 		print t
 		print "Transaction size %d signed" % len(t)
@@ -340,4 +341,9 @@ class Account():
 			if not tx_signed.is_signature_ok(idx):
 				print "Signature Error"
 		# Send the transaction to network.
-		self.insight.send_tx(tx_signed)
+		try:
+			ret = self.insight.send_tx(tx_signed)
+		except HTTPError as ex:
+			print "Transaction could not be sent"
+			return -1
+		return json.loads(ret)['txid']
