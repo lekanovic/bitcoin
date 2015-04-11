@@ -96,7 +96,7 @@ def get_all_accounts():
 def find_account_with_balance():
     while True:
         account = find_random_account()
-        if account['wallet-balance'] > 0:
+        if account['wallet-balance'] > 10000:
             return account, account['wallet-balance']
 
 def find_random_account():
