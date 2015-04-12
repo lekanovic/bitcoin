@@ -232,6 +232,7 @@ def main(argv):
 		receiver = Account.from_json(receiver,network)
 
 		addr = receiver.get_bitcoin_address()
+		db.update_account(json.loads(receiver.to_json()))
 
 		if sender.has_unconfirmed_balance() or receiver.has_unconfirmed_balance():
 			print "has_unconfirmed_balance, cannot send right now"
