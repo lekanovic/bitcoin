@@ -37,7 +37,7 @@ class BlockchainFetcher():
 		for t2 in tx.txs_out:
 			account_json = json.loads(self.db.find_bitcoin_address(t2.bitcoin_address(self.netcode)))
 			if account_json:
-				print "Receiving bitcoins %s" % t2.bitcoin_address(self.netcode)
+				print "Receiving bitcoins %s" % account_json['email']
 				a = Account.from_json(account_json, network="testnet")
 				if a.wallet_balance() != account_json['wallet-balance']:
 					print "Old balance %d New balance %d" % (account_json['wallet-balance'], a.wallet_balance())
@@ -65,19 +65,11 @@ class BlockchainFetcher():
 			if current_block != previous_block: # A new block has been accepted in the blockchain
 				blockheader, tx_hashes = self.insight.get_blockheader_with_transaction_hashes(tip_hash)
 				print blockheader
-				'''
-				Get all tx ids from the new block. Check if we have unconfirmed tx and compare
-				those with to the one's in the new block. If we find a match update our database.
-				'''
-				tx_ids = [ json.loads(p)['tx_id'] for p in self.db.get_unconfirmed_transactions()]
 
 				for t1 in tx_hashes:
 					hex_tx = b2h_rev(t1)
-					if hex_tx in tx_ids:
-						print "Transaction made from our wallets"
-						print hex_tx
-						tx = self.insight.get_tx(t1)
-						self.check_inputs_outputs(tx)
+					tx = self.insight.get_tx(t1)
+					self.check_inputs_outputs(tx)
 				self.update_transactions(blockheader.height)
 			previous_block = current_block
 			time.sleep(5)
