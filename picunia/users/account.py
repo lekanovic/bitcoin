@@ -134,6 +134,7 @@ class Account():
 			self.subkeys.append(key)
 			if not self.insight.is_address_used(key):
 				if not self.__check_gap(self.index):
+					self.index += 1
 					break
 			self.index += 1
 
@@ -155,6 +156,7 @@ class Account():
 
 		key_amount=[]
 		amount=0
+
 		for s in self.__get_all_keys():
 			d={}
 			spendable = self.insight.spendables_for_address(s)
