@@ -102,13 +102,13 @@ def main(argv):
 		s = args.multisig.split(":")
 		from_email = s[0]
 		to_email = s[1]
-		escrow = s[2]
+		escrow_email = s[2]
 		amount = int(s[3])
 		tx_unsigned = 0
 
 		sender = json.loads(db.find_account(from_email))
 		receiver = json.loads(db.find_account(to_email))
-		escrow = json.loads(db.find_account(escrow))
+		escrow = json.loads(db.find_account(escrow_email))
 
 		sender = Account.from_json(sender,network)
 		receiver = Account.from_json(receiver,network)
@@ -144,7 +144,7 @@ def main(argv):
 			d['from'] = from_email
 			d['to_addr'] = multi_address
 			d['to_email'] =  to_email
-			d['escrow'] = escrow
+			d['escrow'] = escrow_email
 			d['tx_id'] = tx_signed.id()
 			d['amount'] = amount
 			d['fee'] = tx_signed.fee()
