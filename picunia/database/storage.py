@@ -21,6 +21,7 @@ class Storage(object):
 		self.client = MongoClient(URL)
 		self.dba = self.client.accountsDB
 		self.dbt = self.client.TransactionDB
+		self.db_blk = self.client.blockDB
 
 	def add_account(self, account):
 		''' Add an account to the database
@@ -103,6 +104,13 @@ class Storage(object):
 			arg - dict
 		'''
 		self.dbt.transaction.insert(transaction)
+
+	def find_last_block(self):
+		res = self.db_blk.blockDB.find().sort("block-height", -1).limit(1)
+		return dumps(res, indent=4)
+
+	def add_block(self, block):
+		self.db_blk.blockDB.insert(block)
 
 	def find_transaction(self, transaction):
 		res = self.dbt.transaction.find_one({"tx_id" : transaction['tx_id']})
