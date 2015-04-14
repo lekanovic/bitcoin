@@ -56,6 +56,22 @@ class BlockchainFetcher():
 			tx_dict['block'] = block_height
 			self.db.update_transaction(tx_dict)
 
+	def catch_up(self):
+		'''
+		TODO
+			Work your way back by using the previous block until we reach
+			last_height. Then we have all the blocks that we have missed.
+		'''
+		last_height = json.loads(self.db.find_last_block())
+		if not last_height:
+			return
+		tip_hash = self.insight.get_blockchain_tip()
+		blockheader, tx_hashes = self.insight.get_blockheader_with_transaction_hashes(tip_hash)
+
+		print type(last_height)
+		print len(last_height)
+		print "block height %s" % last_height[0]['block-height']
+
 	def run(self):
 		previous_block=0
 		print "Starting blockchain fetcher..."
@@ -72,6 +88,9 @@ class BlockchainFetcher():
 					self.check_inputs_outputs(tx)
 				self.update_transactions(blockheader.height)
 			previous_block = current_block
+			blk = {}
+			blk['block-height'] = blockheader.height
+			self.db.add_block(blk)
 			time.sleep(5)
 
 def sync_all_accounts(threadName, delay):
@@ -95,6 +114,7 @@ except:
    print "Error: unable to start thread"
 
 app = BlockchainFetcher()
+app.catch_up()
 app.run()
 #daemon_runner = runner.DaemonRunner(app)
 #daemon_runner.do_action()
