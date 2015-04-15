@@ -58,19 +58,38 @@ class BlockchainFetcher():
 
 	def catch_up(self):
 		'''
-		TODO
-			Work your way back by using the previous block until we reach
-			last_height. Then we have all the blocks that we have missed.
+		This function will restart at the last block that was processes. This function
+		is necessary if the process stops running or needs to be restarted. We want to
+		be sure not to miss any blocks.
+
 		'''
-		last_height = json.loads(self.db.find_last_block())
+		block_hashes = []
+		current_height = 0
+		last_height = json.loads(self.db.find_last_block())[0]['block-height']
+
 		if not last_height:
 			return
-		tip_hash = self.insight.get_blockchain_tip()
-		blockheader, tx_hashes = self.insight.get_blockheader_with_transaction_hashes(tip_hash)
 
-		print type(last_height)
-		print len(last_height)
-		print "block height %s" % last_height[0]['block-height']
+		tip_hash = self.insight.get_blockchain_tip()
+		while last_height != current_height:
+			blockheader, tx_hashes = self.insight.get_blockheader_with_transaction_hashes(tip_hash)
+			current_height = blockheader.height
+			tip_hash = blockheader.previous_block_hash
+			block_hashes.insert(0,tip_hash)
+			blk = {}
+			blk['block-height'] = blockheader.height
+			self.db.add_block(blk)
+
+		# Reverse the list
+		for b in block_hashes:
+			blockheader, tx_hashes = self.insight.get_blockheader_with_transaction_hashes(b)
+			print blockheader.height
+
+			for t1 in tx_hashes:
+				hex_tx = b2h_rev(t1)
+				tx = self.insight.get_tx(t1)
+				self.check_inputs_outputs(tx)
+			self.update_transactions(blockheader.height)
 
 	def run(self):
 		previous_block=0
@@ -116,6 +135,9 @@ except:
 app = BlockchainFetcher()
 app.catch_up()
 app.run()
+
+
+
 #daemon_runner = runner.DaemonRunner(app)
 #daemon_runner.do_action()
 
