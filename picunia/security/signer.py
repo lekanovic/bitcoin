@@ -32,9 +32,11 @@ class Signer:
 	def sign_tx(cls, account_nr, key_index, tx_unsigned, netcode="BTC"):
 		def BIP39_static_seed():
 			words = 'category fiscal fuel great review rather useful shop middle defense cube vacuum resource fiber special nurse chief category mask display bag echo concert click february fame tenant innocent affair usual hole soon bean adjust shoe voyage immune chest gaze chaos tip way glimpse sword tray craft blur seminar'
-			seed = h2b('6ad72bdbc8b5c423cdc52be4b27352086b230879a0fd642bbbb19f5605941e3001eb70c6a53ea090f28d4b0e3033846b23ae2553c60a9618d7eb001c3aba2a30')    
+			seed = h2b('6ad72bdbc8b5c423cdc52be4b27352086b230879a0fd642bbbb19f5605941e3001eb70c6a53ea090f28d4b0e3033846b23ae2553c60a9618d7eb001c3aba2a30')
 			return seed, words
 
+		tx_unsigned = Tx.tx_from_hex(tx_unsigned)
+		key_index = int(key_index)
 		seed, words = BIP39_static_seed()
 		
 		master = BIP32Node.from_master_secret(seed, netcode)
