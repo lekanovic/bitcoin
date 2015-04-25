@@ -7,54 +7,26 @@ from threading import Thread
 from crypt.reedsolo import RSCodec
 from Queue import Queue
 from signer import Signer
-
+from protocol import assemble_package, disassemble_package
+from transmitter import transmit_package
 
 msg_queue = Queue()
 
-class Transmitter:
-    def __init__(self, compress=True, **kwargs):
-        self.p = subprocess.Popen(['bin/minimodem', '-t', '-8',
-            kwargs.get('baudmode', 'rtty')] + kwargs.get('extra_args', []),
-            stdin=subprocess.PIPE)
-        self.compress = compress
-
-    def write(self, text):
-        s = len(text)
-
-        if self.compress:
-            text = base64.b64encode(zlib.compress(text))
-            print "Size before %d size after %d" % (s, len(text))
-
-        rs = RSCodec(10)
-        text = rs.encode(text)
-
-        self.p.stdin.write(text)
-
-    def close(self):
-        self.p.stdin.close()
-        self.p.wait()
 
 class Consumer(threading.Thread):
-
-    def parse_msg(self, msg):
-        account_info = msg[msg.index('['):msg.index(']')+1]
-        tx = msg[len(account_info):]
-
-        a = account_info.replace('[','').replace(']','').split(',')
-        account_nr = a[0]
-        key_index = a[1]
-        print account_nr, key_index
-        print tx
-        return account_nr, key_index, tx
 
     def run(self):
         global msg_queue
         while True:
             msg = msg_queue.get()
             print "Consumed"
-            account_nr, key_index, tx = self.parse_msg(msg)
+            p = disassemble_package(msg)
 
-            print Signer.sign_tx(account_nr, key_index, tx, netcode="XTN")
+            tx_signed = Signer.sign_tx(p.account_nr, p.key_index, p.tx, netcode=p.netcode)
+
+            print tx_signed
+
+            transmit_package(tx_signed)
 
             msg_queue.task_done()
 
