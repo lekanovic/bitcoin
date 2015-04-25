@@ -82,7 +82,7 @@ class Receiver:
                         print "It took %s" % (end - start)
 
     def __init__(self, compress=True, **kwargs):
-        self.p = subprocess.Popen(['bin/minimodem', '-r', '-8', '-A',
+        self.p = subprocess.Popen(['minimodem', '-r', '-8', '-A',
             kwargs.get('baudmode', 'rtty')] + kwargs.get('extra_args', []),
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 

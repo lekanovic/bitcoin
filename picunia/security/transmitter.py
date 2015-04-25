@@ -6,7 +6,7 @@ from Queue import Queue
 
 class Transmitter:
     def __init__(self, compress=True, **kwargs):
-        self.p = subprocess.Popen(['bin/minimodem', '-t', '-8',
+        self.p = subprocess.Popen(['minimodem', '-t', '-8',
             kwargs.get('baudmode', 'rtty')] + kwargs.get('extra_args', []),
             stdin=subprocess.PIPE)
         self.compress = compress
