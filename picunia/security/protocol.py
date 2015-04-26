@@ -17,6 +17,15 @@ def assemble_package(account_nr, key_index, netcode, tx_unsigned):
 				  tx=tx_unsigned)
 	return package.build(c)
 
+def assemble_package_tx_only(tx_signed):
+  '''
+    Use this when only the transaction is to be sent. Rest of the
+    values is blanked out.
+
+      tx_signed - signed transaction as HEX.
+  '''
+  return assemble_package(0, 0, "XXX", tx_signed)
+
 def disassemble_package(p):
 	return package.parse(p)
 
