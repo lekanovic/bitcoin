@@ -6,6 +6,7 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.serialize import h2b
 from picunia.users.account import Account, InsufficientFunds
 from picunia.database.storage import Storage
+from picunia.security.sign_tx_client import sign_tx
 from bson.json_util import dumps
 from pycoin.encoding import wif_to_secret_exponent
 from pycoin.tx.pay_to import build_hash160_lookup
@@ -34,12 +35,19 @@ class LazySecretExponentDB(object):
         self.wif_iterable = []
         return None
 
+def sign_transaction(account, tx_unsigned, netcode):
+	account_nr = int(account.account_index)
+	key_index = int(account.index)
+	tx_hex = tx_unsigned.as_hex(include_unspents=True)
+	sign_tx(account_nr, key_index, netcode, tx_hex)
+'''
+
 def BIP39_static_seed():
     words = 'category fiscal fuel great review rather useful shop middle defense cube vacuum resource fiber special nurse chief category mask display bag echo concert click february fame tenant innocent affair usual hole soon bean adjust shoe voyage immune chest gaze chaos tip way glimpse sword tray craft blur seminar'
     seed = h2b('6ad72bdbc8b5c423cdc52be4b27352086b230879a0fd642bbbb19f5605941e3001eb70c6a53ea090f28d4b0e3033846b23ae2553c60a9618d7eb001c3aba2a30')    
     return seed, words
 
-def sign_tx(account, tx_unsigned, netcode):
+def sign_transaction(account, tx_unsigned, netcode):
 	seed, words = BIP39_static_seed()
 	master = BIP32Node.from_master_secret(seed, netcode)
 
@@ -54,7 +62,6 @@ def sign_tx(account, tx_unsigned, netcode):
 	for k in range(0, account.index):
 		p1 = key_path + "%sH/0/%s" % (account_nr, k)
 		wifs.append( master.subkey_for_path(p1).wif(use_uncompressed=False) )
-
 	p1 = key_path + "%sH/1" % (account_nr)
 
 	wifs.append( master.subkey_for_path(p1).wif(use_uncompressed=False) )
@@ -62,7 +69,7 @@ def sign_tx(account, tx_unsigned, netcode):
 	tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
 
 	return tx_signed
-
+'''
 def send_tx(sender, tx_signed):
 	tx_id = sender.send_tx(tx_signed)
 	if tx_signed.id() != tx_id:
@@ -139,7 +146,7 @@ def main(argv):
 			exit(1)
 
 		if not tx_unsigned is None:
-			tx_signed = sign_tx(sender, tx_unsigned, netcode)
+			tx_signed = sign_transaction(sender, tx_unsigned, netcode)
 			d={}
 			d['from'] = from_email
 			d['to_addr'] = multi_address
@@ -186,10 +193,10 @@ def main(argv):
 				print "Transaction failed amount too small.."
 			exit(1)
 
-		tx_signed = sign_tx(sender, tx_unsigned, netcode)
+		tx_signed = sign_transaction(sender, tx_unsigned, netcode)
 
 		if not tx_unsigned is None:
-			tx_signed = sign_tx(sender, tx_unsigned, netcode)
+			tx_signed = sign_transaction(sender, tx_unsigned, netcode)
 			d={}
 			d['from'] = from_email
 			d['to_addr'] = "N/A"
@@ -252,7 +259,7 @@ def main(argv):
 			exit(1)
 
 		if not tx_unsigned is None:
-			tx_signed = sign_tx(sender, tx_unsigned, netcode)
+			tx_signed = sign_transaction(sender, tx_unsigned, netcode)
 			d={}
 			d['from'] = from_email
 			d['to_addr'] = addr
