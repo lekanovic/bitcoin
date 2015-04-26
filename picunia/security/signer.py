@@ -1,7 +1,8 @@
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.serialize import h2b
 from pycoin.tx.Tx import Tx
-
+from pycoin.encoding import wif_to_secret_exponent
+from pycoin.tx.pay_to import build_hash160_lookup
 
 class LazySecretExponentDB(object):
     """
@@ -41,15 +42,19 @@ class Signer:
 		
 		master = BIP32Node.from_master_secret(seed, netcode)
 
+		print account_nr, key_index, netcode, tx_unsigned
+
 		if netcode == "XTN":
 			key_path = "44H/1H/"
 		elif netcode == "BTC":
 			key_path = "44H/1H/"
 
+		k = 0
 		wifs = []
-		for k in range(0, key_index):
+		while k < key_index:
 			p1 = key_path + "%sH/0/%s" % (account_nr, k)
 			wifs.append( master.subkey_for_path(p1).wif(use_uncompressed=False) )
+			k += 1
 
 		p1 = key_path + "%sH/1" % (account_nr)
 
