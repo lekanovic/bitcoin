@@ -7,7 +7,7 @@ from threading import Thread
 from crypt.reedsolo import RSCodec
 from Queue import Queue
 from signer import Signer
-from protocol import assemble_package, disassemble_package
+from protocol import assemble_package, disassemble_package, assemble_package_tx_only
 from transmitter import transmit_package
 
 msg_queue = Queue()
@@ -24,9 +24,11 @@ class Consumer(threading.Thread):
 
             tx_signed = Signer.sign_tx(p.account_nr, p.key_index, p.tx, netcode=p.netcode)
 
-            print tx_signed
+            tx_signed_hex = tx_signed.as_hex(include_unspents=True)
 
-            transmit_package(tx_signed)
+            package = assemble_package_tx_only(tx_signed_hex)
+
+            transmit_package(package)
 
             msg_queue.task_done()
 
