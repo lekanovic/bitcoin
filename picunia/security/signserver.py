@@ -4,7 +4,7 @@ import time
 import select
 import zlib, base64
 from threading import Thread
-from crypt.reedsolo import RSCodec
+from crypt.reedsolo import RSCodec, ReedSolomonError
 from Queue import Queue
 from signer import Signer
 from protocol import assemble_package, disassemble_package, assemble_package_tx_only
