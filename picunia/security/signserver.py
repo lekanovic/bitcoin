@@ -70,7 +70,11 @@ class Receiver:
                         b.extend(packet)
 
                         rs = RSCodec(10)
-                        packet = rs.decode(b)
+                        try:
+                            packet = rs.decode(b)
+                        except ReedSolomonError:
+                            print "Package broken, wait for resend.."
+                            continue
 
                         if self.compress:
                             try:
