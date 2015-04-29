@@ -12,6 +12,7 @@ from picunia.collection.proof import ProofOfExistence
 import datetime
 import md5
 import json
+import urllib2
 
 
 class InsufficientFunds(Exception):
@@ -345,7 +346,19 @@ class Account():
 		# Send the transaction to network.
 		try:
 			ret = self.insight.send_tx(tx_signed)
-		except HTTPError as ex:
+		except urllib2.HTTPError as ex:
 			print "Transaction could not be sent"
 			return -1
 		return json.loads(ret)['txid']
+
+	def transaction_cb(self, tx_hex):
+		print "callback in Account..."
+		print "Transaction size %d signed" % len(tx_hex)
+		ret = 0
+		tx = Tx.tx_from_hex(tx_hex)
+		try:
+			ret = self.insight.send_tx(tx)
+		except urllib2.HTTPError as ex:
+			print "Transaction could not be sent"
+			return -1
+		print json.loads(ret)['txid']
