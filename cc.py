@@ -35,11 +35,11 @@ class LazySecretExponentDB(object):
         self.wif_iterable = []
         return None
 
-def sign_transaction(account, tx_unsigned, netcode):
+def sign_transaction(account, tx_unsigned, netcode, callback):
 	account_nr = int(account.account_index)
 	key_index = int(account.index)
 	tx_hex = tx_unsigned.as_hex(include_unspents=True)
-	sign_tx(account_nr, key_index, netcode, tx_hex)
+	sign_tx(account_nr, key_index, netcode, tx_hex, cb=callback)
 '''
 
 def BIP39_static_seed():
@@ -259,12 +259,12 @@ def main(argv):
 			exit(1)
 
 		if not tx_unsigned is None:
-			tx_signed = sign_transaction(sender, tx_unsigned, netcode)
+			tx_signed = sign_transaction(sender, tx_unsigned, netcode, sender.transaction_cb)
 			d={}
 			d['from'] = from_email
 			d['to_addr'] = addr
 			d['to_email'] =  to_email
-			d['tx_id'] = tx_signed.id()
+			d['tx_id'] = -1 # We need to fix this later.
 			d['amount'] = amount
 			d['fee'] = tx_signed.fee()
 			d['confirmations'] = -1
@@ -272,7 +272,6 @@ def main(argv):
 			d['block'] = -1
 			d['type'] = "STANDARD"
 
-			send_tx(sender, tx_signed)
 			db.add_transaction(d)
 		else:
 			print "Transaction failed"
