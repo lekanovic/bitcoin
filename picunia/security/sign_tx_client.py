@@ -14,7 +14,7 @@ from transmitter import transmit_package
 send_queue = Queue()
 resend_package = False
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class Consumer(threading.Thread):
