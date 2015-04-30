@@ -13,6 +13,10 @@ import datetime
 import md5
 import json
 import urllib2
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class InsufficientFunds(Exception):
@@ -148,7 +152,7 @@ class Account():
 
 	def wallet_info(self):
 		balance = self.wallet_balance()
-		print "Account owner %s balance %d Satoshi = %f BTC" % (self.name, balance, satoshi_to_btc(balance))
+		logger.debug("Account owner %s balance %d Satoshi = %f BTC", self.name, balance, satoshi_to_btc(balance))
 		for k in self.subkeys:
 			print "%s" % (k)
 
@@ -206,7 +210,7 @@ class Account():
 		return self.insight.has_unconfirmed_balance(self.__get_all_keys())
 
 	def __pay_with_fee(self, to_addr, amount, fee=10000):
-		print "Pay %d to %s" % (amount, to_addr)
+		logger.debug("Pay %d to %s", amount, to_addr)
 		spendables = self.insight.spendables_for_addresses(self.__get_all_keys())
 
 		available_funds = sum(s.coin_value for s in spendables)
@@ -224,7 +228,7 @@ class Account():
 			msg = "Available %d trying to spend %d " % (available_funds, amount + fee)
 			raise InsufficientFunds(msg)
 
-		print "The change is %d" % change
+		logger.debug("The change is %d", change)
 
 		txs_in = [spendable.tx_in() for spendable in to_spend]
 
@@ -240,10 +244,10 @@ class Account():
 		tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out, lock_time=0)
 		tx.set_unspents(to_spend)
 
-		print "Transaction fee %d" % tx.fee()
+		logger.debug("Transaction fee %d", tx.fee())
 		t = tx.as_hex(include_unspents=True)
-		print t
-		print "Transaction size %d unsigned" % len(t)
+		logger.debug(t)
+		logger.debug("Transaction size %d unsigned", len(t))
 
 		return tx
 
@@ -254,7 +258,7 @@ class Account():
 		recommended_fee = tx_fee.recommended_fee_for_tx(tx)
 
 		if recommended_fee != fee:
-			print "Recommended fee %d but using %d" % (recommended_fee, fee)
+			logger.debug("Recommended fee %d but using %d", recommended_fee, fee)
 			tx = self.__pay_with_fee(to_addr, amount, recommended_fee)
 
 		return tx
@@ -271,8 +275,8 @@ class Account():
 
 		to_spend, change = self.__greedy(spendables, amount + fee)
 
-		print "The change is %d" % change
-		print "Wallet balance %s" % self.wallet_balance()
+		logger.debug("The change is %d", change)
+		logger.debug("Wallet balance %s", self.wallet_balance())
 		txs_in = [spendable.tx_in() for spendable in to_spend]
 
 		# Create 40 bytes packages from the message that we want to
@@ -294,10 +298,10 @@ class Account():
 		if tx.fee() == 0:
 			raise InsufficientFunds("No fee added, must have fee")
 
-		print "Transaction fee %d" % tx.fee()
+		logger.debug("Transaction fee %d", tx.fee())
 		t = tx.as_hex(include_unspents=True)
-		print t
-		print "Transaction size %d unsigned" % len(t)
+		logger.debug(t)
+		logger.debug("Transaction size %d unsigned", len(t))
 
 		return tx
 
@@ -310,55 +314,44 @@ class Account():
 
 		script = ScriptMultisig(n=N, sec_keys=[key.sec() for key in keys[:M]])
 
-		print "Script %s" % repr(script)
-		print "TxIn %s" % tx_in.bitcoin_address()
+		logger.debug("Script %s", repr(script))
+		logger.debug("TxIn %s", tx_in.bitcoin_address())
 		script = script.script()
 
 		address = address_for_pay_to_script(script, self.netcode)
-		print "Multisig address: %s" % address
+		logger.debug("Multisig address: %s", address)
 
 		tx_out = TxOut(10000, script)
 		tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
 
-		print tx1.as_hex(include_unspents=True)
+		logger.debug(tx1.as_hex(include_unspents=True))
 
 		return tx1, address
-		'''
-		hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys)
-		tx_signed = tx2.sign(hash160_lookup=hash160_lookup)
-
-		for idx, tx_out in enumerate(tx2.txs_in):
-			if not tx2.is_signature_ok(idx):
-				print "Signature Error"
-
-		print_tx(tx_signed)
-		'''
 
 	def send_tx(self, tx_signed):
 		ret = 0
 		t = tx_signed.as_hex(include_unspents=True)
-		print t
-		print "Transaction size %d signed" % len(t)
+		logger.debug(t)
+		logger.debug("Transaction size %d signed", len(t))
 
 		for idx, tx_out in enumerate(tx_signed.txs_in):
 			if not tx_signed.is_signature_ok(idx):
-				print "Signature Error"
+				logger.info("Signature Error")
 		# Send the transaction to network.
 		try:
 			ret = self.insight.send_tx(tx_signed)
 		except urllib2.HTTPError as ex:
-			print "Transaction could not be sent"
+			logger.info("Transaction could not be sent")
 			return -1
 		return json.loads(ret)['txid']
 
 	def transaction_cb(self, tx_hex):
-		print "callback in Account..."
-		print "Transaction size %d signed" % len(tx_hex)
+		logger.debug("Transaction size %d signed", len(tx_hex))
 		ret = 0
 		tx = Tx.tx_from_hex(tx_hex)
 		try:
 			ret = self.insight.send_tx(tx)
 		except urllib2.HTTPError as ex:
-			print "Transaction could not be sent"
+			logger.info("Transaction could not be sent")
 			return -1
 		print json.loads(ret)['txid']
