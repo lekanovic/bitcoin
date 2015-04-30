@@ -3,6 +3,7 @@ import threading
 import zlib, base64
 import time
 import select
+import logging
 from signer import Signer
 from crypt.reedsolo import RSCodec, ReedSolomonError
 from Queue import Queue
@@ -11,35 +12,51 @@ from transmitter import transmit_package
 
 
 send_queue = Queue()
+resend_package = False
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class Consumer(threading.Thread):
+    def __init__(self, e):
+        threading.Thread.__init__(self)
+        self.event = e
 
     def run(self):
         global send_queue
+        global resend_package
         while True:
             package = send_queue.get()
-            print "Consumed"
+            logger.debug("Consumed")
 
-            transmit_package(package)
+            while True:
+                transmit_package(package)
+                logger.debug("Wait for answer..")
+                self.event.wait()
+                if not resend_package:
+                    break
+                time.sleep(1)
 
             send_queue.task_done()
 
 
 class Receiver:
     class ReceiverReader(threading.Thread):
-        def __init__(self, stdout, stderr, compress=True, cb=None):
+        def __init__(self, stdout, stderr, event, compress=True, cb=None):
             threading.Thread.__init__(self)
             self.stdout = stdout
             self.stderr = stderr
             self.compress = compress
             self.func_cb = cb
+            self.event = event
 
         def run(self):
             in_packet = False
             packet = ''
-            global recv_queue
+            global resend_package
             while True:
                 readers, _, _ = select.select([self.stdout, self.stderr], [], [])
+                self.event.clear()
                 if in_packet:
                     if self.stdout in readers:
                         data = self.stdout.read(1)
@@ -66,7 +83,9 @@ class Receiver:
                         try:
                             packet = rs.decode(b)
                         except ReedSolomonError:
-                            print "Package broken, wait for resend.."
+                            logger.debug("Package broken, wait for resend..%s", b)
+                            resend_package = True
+                            self.event.set()
                             continue
 
                         if self.compress:
@@ -75,33 +94,38 @@ class Receiver:
                             except:
                                 pass
 
-                        print 'Got packet: %s' % packet
+                        logger.debug("Got packet: %s", packet)
                         end = time.time()
-                        print "It took %s" % (end - start)
+                        logger.debug("It took %s", (end - start))
 
                         p = disassemble_package(packet)
 
+                        resend_package = False
+                        self.event.set()
                         # Callback function with the signed transaction
                         if self.func_cb is not None:
                             self.func_cb(p.tx)
 
-    def __init__(self, cb=None, compress=True, **kwargs):
+    def __init__(self, event, cb=None, compress=True, **kwargs):
         self.p = subprocess.Popen(['minimodem', '-r', '-8', '-A',
             kwargs.get('baudmode', 'rtty')] + kwargs.get('extra_args', []),
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         self.compress = compress
-        self.reader = Receiver.ReceiverReader(self.p.stdout, self.p.stderr, compress, cb)
+        self.reader = Receiver.ReceiverReader(self.p.stdout, self.p.stderr, event, compress, cb)
         self.reader.setDaemon(True)
         self.reader.start()
 
 def start_service(callback):
     use_compression = True
     baud = '3000'
-    print "Start Receiver"
-    receiver = Receiver(cb=callback, compress=use_compression, baudmode=baud)
-    print "Start Consumer"
-    consumer = Consumer()
+    event = threading.Event()
+    logger.info("Start Receiver")
+
+    receiver = Receiver(event, cb=callback, compress=use_compression, baudmode=baud)
+    logger.info("Start Consumer")
+
+    consumer = Consumer(event)
     consumer.start()
 
     #receiver.p.wait()
@@ -116,7 +140,7 @@ def sign_tx(account_nr, key_index, netcode, tx, cb):
     if not isinstance(tx, unicode):
         raise TypeError("Expected int, got %s" % (type(tx),))
 
-    print "Starting service..."
+    logger.info("Starting service...")
     start_service(cb)
 
     package = assemble_package(account_nr, key_index, netcode, tx)
