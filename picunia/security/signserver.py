@@ -74,6 +74,8 @@ class Receiver:
                             packet = rs.decode(b)
                         except ReedSolomonError:
                             print "Package broken, wait for resend.."
+                            package = assemble_package_tx_only(' RESEND '*5)
+                            transmit_package(package)
                             continue
 
                         if self.compress:
