@@ -28,7 +28,7 @@ class Consumer(threading.Thread):
             transmit_package(package)
             logger.debug("Wait for answer..")
             self.event.wait()
-
+            logger.debug("Wait released..")
             if not resend_package:
                 print "not Resend package"
                 break
