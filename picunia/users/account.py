@@ -346,7 +346,7 @@ class Account():
 		return json.loads(ret)['txid']
 
 	def transaction_cb(self, tx_hex):
-		logger.debug("Transaction size %d signed", len(tx_hex))
+		logger.debug("Transaction size %d signed %s", len(tx_hex), self.email)
 		ret = 0
 		tx = Tx.tx_from_hex(tx_hex)
 		try:
