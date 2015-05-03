@@ -4,10 +4,52 @@ import random
 import os
 import subprocess
 import urllib, json
-import json
+import time
+import datetime
+from pycoin.tx.Tx import Tx
+from pycoin.key.BIP32Node import BIP32Node
+from pycoin.serialize import h2b
+from picunia.users.account import Account, InsufficientFunds
+from picunia.database.storage import Storage
+from picunia.security.sign_tx_client import sign_tx, start_service
+from bson.json_util import dumps
+from pycoin.encoding import wif_to_secret_exponent
+from pycoin.tx.pay_to import build_hash160_lookup
+from pycoin.services.insight import InsightService
 from random import randint
+import logging
+
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 joke_database = []
+insight = InsightService("http://localhost:3001")
+
+netcode="XTN"
+network="testnet"
+key_path = "44H/1H/"
+
+#netcode = 'BTC'
+#networkd = "mainnet"
+#key_path = "44H/0H/"
+
+def transaction_cb(tx_hex):
+    logger.debug("Transaction size %d signed", len(tx_hex))
+    ret = 0
+    tx = Tx.tx_from_hex(tx_hex)
+    try:
+        ret = insight.send_tx(tx)
+    except urllib2.HTTPError as ex:
+        logger.info("Transaction could not be sent")
+        return -1
+    print json.loads(ret)['txid']
+
+def sign_transaction(account, tx_unsigned, netcode, callback):
+    account_nr = int(account.account_index)
+    key_index = int(account.index)
+    tx_hex = tx_unsigned.as_hex(include_unspents=True)
+    sign_tx(account_nr, key_index, netcode, tx_hex, cb=callback)
 
 def fetch_jokes():
     url = "http://api.icndb.com/jokes/random/1000"
@@ -110,20 +152,66 @@ def one_round():
     sender, balance = find_account_with_balance()
     receiver = find_random_account()
     amount = balance / 10
-
+    '''
     if randint(0,20) == 10:
         send_chucknorris_joke_as_proofofexistens(sender)
 
     if randint(0,20) == 10:
         escrow = find_random_account()
         multisig_transacion(sender['email'], receiver['email'], escrow['email'], amount)
-
+    '''
     print "%s sending %d to %s" % (sender['email'], amount, receiver['email'])
     send_from_to(sender['email'], receiver['email'], amount)
 
 def send_from_to(from_email, to_email, amount):
-    cmd = "python cc.py -s %s:%s:%s" % (from_email, to_email, amount)
-    os.system(cmd)
+    tx_unsigned = 0
+    db = Storage()
+    print from_email, to_email, amount
+
+    sender = json.loads(db.find_account(from_email))
+
+    receiver = json.loads(db.find_account(to_email))
+
+    sender = Account.from_json(sender, network)
+    receiver = Account.from_json(receiver, network)
+
+    addr = receiver.get_bitcoin_address()
+    db.update_account(json.loads(receiver.to_json()))
+
+    if sender.has_unconfirmed_balance() or receiver.has_unconfirmed_balance():
+        print "has_unconfirmed_balance, cannot send right now"
+        exit(1)
+
+    try:
+        tx_unsigned = sender.pay_to_address(addr,amount)
+    except InsufficientFunds:
+        balance = sender.wallet_balance()
+        a = json.loads(db.find_account(from_email))
+        if a['wallet-balance'] != balance:
+            print "Updating balance from %d to %d" % (a['wallet-balance'], balance)
+            #db.update_balance(a, balance)
+            db.update_account(json.loads(sender.to_json()))
+        else:
+            print "Transaction failed amount too small.."
+        return
+
+    if not tx_unsigned is None:
+        tx_signed = sign_transaction(sender, tx_unsigned, netcode, sender.transaction_cb)
+        d={}
+        d['from'] = from_email
+        d['to_addr'] = addr
+        d['to_email'] =  to_email
+        d['tx_id'] = -1 # tx_signed.id()
+        d['amount'] = amount
+        d['fee'] = -1 # tx_signed.fee()
+        d['confirmations'] = -1
+        d['date'] = str( datetime.datetime.now() )
+        d['block'] = -1
+        d['type'] = "STANDARD"
+
+        db.add_transaction(d)
+    else:
+        print "Transaction failed"
 
 def main(argv):
     msg = "Test that simulates new accounts created. Simulates user sending Satoshis between them."
@@ -132,6 +220,9 @@ def main(argv):
         help="Generate random user accounts. Input: int - number of accounts to create")
     parser.add_argument("-s","--simulate",
         help="Simulate random user sending Satoshi to another random user. Input: int - rounds to run simulator")
+
+    start_service()
+    time.sleep(2)
 
     args = parser.parse_args()
 
@@ -143,6 +234,8 @@ def main(argv):
         number = int(args.simulate)
         for i in range(0, number):
             one_round()
+
+    time.sleep(1000000)
 
 if __name__ == "__main__":
   main(sys.argv[1:])
