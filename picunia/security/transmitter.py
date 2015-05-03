@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class Transmitter:
     def __init__(self, compress=True, **kwargs):
-        self.p = subprocess.Popen(['minimodem', '-t', '-8',
+        self.p = subprocess.Popen(['minimodem', '-t', '-8', '-A',
             kwargs.get('baudmode', 'rtty')] + kwargs.get('extra_args', []),
             stdin=subprocess.PIPE)
         self.compress = compress
