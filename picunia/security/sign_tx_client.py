@@ -88,17 +88,13 @@ class Receiver:
                         rs = RSCodec(10)
                         try:
                             packet = rs.decode(b)
-                        except ReedSolomonError:
+                            if self.compress:
+                                packet = zlib.decompress(base64.b64decode(packet))
+                        except:
                             logger.debug("Package broken, wait for resend..%s", b)
                             resend_package = True
                             self.event.set()
                             continue
-
-                        if self.compress:
-                            try:
-                                packet = zlib.decompress(base64.b64decode(packet))
-                            except:
-                                pass
 
                         logger.debug("Got packet: %s", packet)
                         end = time.time()
