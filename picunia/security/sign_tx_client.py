@@ -48,12 +48,12 @@ class Consumer(threading.Thread):
 
 class Receiver:
     class ReceiverReader(threading.Thread):
-        def __init__(self, stdout, stderr, event, compress=True, cb=None):
+        def __init__(self, stdout, stderr, event, compress=True):
             threading.Thread.__init__(self)
             self.stdout = stdout
             self.stderr = stderr
             self.compress = compress
-            self.func_cb = cb
+            self.func_cb = []
             self.event = event
 
         def run(self):
@@ -111,8 +111,9 @@ class Receiver:
                         resend_package = False
                         self.event.set()
                         # Callback function with the signed transaction
-                        if self.func_cb is not None:
-                            self.func_cb(p.tx)
+                        cb = self.func_cb.pop(0)
+                        if cb is not None:
+                            cb(p.tx)
 
     def __init__(self, event, compress=True, **kwargs):
         self.p = subprocess.Popen(['minimodem', '-r', '-8', '-A',
@@ -153,7 +154,7 @@ def sign_tx(account_nr, key_index, netcode, tx, cb):
         raise TypeError("Expected int, got %s" % (type(tx),))
 
     global receiver
-    receiver.reader.func_cb = cb
+    receiver.reader.func_cb.append(cb)
 
     package = assemble_package(account_nr, key_index, netcode, tx)
 
