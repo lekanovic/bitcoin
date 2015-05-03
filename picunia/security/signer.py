@@ -3,6 +3,8 @@ from pycoin.serialize import h2b
 from pycoin.tx.Tx import Tx
 from pycoin.encoding import wif_to_secret_exponent
 from pycoin.tx.pay_to import build_hash160_lookup
+import shelve
+
 
 class LazySecretExponentDB(object):
     """
@@ -27,6 +29,8 @@ class LazySecretExponentDB(object):
         self.wif_iterable = []
         return None
 
+private_key_db = {}
+
 class Signer:
 
 	@classmethod
@@ -36,6 +40,8 @@ class Signer:
 			seed = h2b('6ad72bdbc8b5c423cdc52be4b27352086b230879a0fd642bbbb19f5605941e3001eb70c6a53ea090f28d4b0e3033846b23ae2553c60a9618d7eb001c3aba2a30')
 			return seed, words
 
+		global private_key_db
+		private_key_db = shelve.open('key.db')
 		tx_unsigned = Tx.tx_from_hex(tx_unsigned)
 		key_index = int(key_index)
 		seed, words = BIP39_static_seed()
@@ -60,7 +66,9 @@ class Signer:
 
 		wifs.append( master.subkey_for_path(p1).wif(use_uncompressed=False) )
 
-		tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, {}))
+		tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, private_key_db))
+
+		private_key_db.close()
 
 		return tx_signed
 
