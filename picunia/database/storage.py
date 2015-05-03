@@ -70,6 +70,11 @@ class Storage(object):
 			res = self.dba.account.find_one({"email" : account})
 		elif type(account) == dict:
 			res = self.dba.account.find_one({"email" : account['email']})
+		elif type(account) == unicode:
+			res = self.dba.account.find_one({"email" : account})
+		else:
+			raise ValueError("Wrong type")
+
 		return dumps(res, indent=4)
 
 	def find_account_index(self, account):
