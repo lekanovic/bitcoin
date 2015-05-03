@@ -72,17 +72,13 @@ class Receiver:
                         rs = RSCodec(10)
                         try:
                             packet = rs.decode(b)
-                        except ReedSolomonError:
+                            if self.compress:
+                                packet = zlib.decompress(base64.b64decode(packet))
+                        except:
                             print "Package broken, wait for resend.."
                             package = assemble_package_tx_only(' RESEND '*5)
                             transmit_package(package)
                             continue
-
-                        if self.compress:
-                            try:
-                                packet = zlib.decompress(base64.b64decode(packet))
-                            except:
-                                pass
 
                         print 'Got packet: %s' % packet
                         msg_queue.put(packet)
