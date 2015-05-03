@@ -1,7 +1,11 @@
 import subprocess
 import zlib, base64
+import logging
 from crypt.reedsolo import RSCodec
 from Queue import Queue
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class Transmitter:
@@ -16,7 +20,8 @@ class Transmitter:
 
         if self.compress:
             text = base64.b64encode(zlib.compress(text))
-            print "Size before %d size after %d" % (s, len(text))
+            percent = "{0:.0f}%".format(float(len(text))/s * 100)
+            logger.debug("Packge compressed %s", percent)
 
         rs = RSCodec(10)
         text = rs.encode(text)
