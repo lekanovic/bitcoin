@@ -23,6 +23,7 @@ class Consumer(threading.Thread):
         self.event = e
 
     def confirm_package(self, package):
+        global resend_package
         while True:
             transmit_package(package)
             logger.debug("Wait for answer..")
@@ -60,8 +61,8 @@ class Receiver:
             packet = ''
             global resend_package
             while True:
-                readers, _, _ = select.select([self.stdout, self.stderr], [], [])
                 self.event.clear()
+                readers, _, _ = select.select([self.stdout, self.stderr], [], [])
                 if in_packet:
                     if self.stdout in readers:
                         data = self.stdout.read(1)
@@ -117,26 +118,30 @@ class Receiver:
                         if self.func_cb is not None:
                             self.func_cb(p.tx)
 
-    def __init__(self, event, cb=None, compress=True, **kwargs):
+    def __init__(self, event, compress=True, **kwargs):
         self.p = subprocess.Popen(['minimodem', '-r', '-8', '-A',
             kwargs.get('baudmode', 'rtty')] + kwargs.get('extra_args', []),
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         self.compress = compress
-        self.reader = Receiver.ReceiverReader(self.p.stdout, self.p.stderr, event, compress, cb)
+        self.reader = Receiver.ReceiverReader(self.p.stdout, self.p.stderr, event, compress)
         self.reader.setDaemon(True)
         self.reader.start()
 
-def start_service(callback):
+receiver = None
+
+def start_service():
     use_compression = True
     baud = '3000'
     event = threading.Event()
     logger.info("Start Receiver")
 
-    receiver = Receiver(event, cb=callback, compress=use_compression, baudmode=baud)
+    global receiver
+    receiver = Receiver(event, compress=use_compression, baudmode=baud)
     logger.info("Start Consumer")
 
     consumer = Consumer(event)
+    consumer.setDaemon(True)
     consumer.start()
 
     #receiver.p.wait()
@@ -151,8 +156,8 @@ def sign_tx(account_nr, key_index, netcode, tx, cb):
     if not isinstance(tx, unicode):
         raise TypeError("Expected int, got %s" % (type(tx),))
 
-    logger.info("Starting service...")
-    start_service(cb)
+    global receiver
+    receiver.reader.func_cb = cb
 
     package = assemble_package(account_nr, key_index, netcode, tx)
 
