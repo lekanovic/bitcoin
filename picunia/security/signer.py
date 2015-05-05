@@ -4,6 +4,12 @@ from pycoin.tx.Tx import Tx
 from pycoin.encoding import wif_to_secret_exponent
 from pycoin.tx.pay_to import build_hash160_lookup
 import shelve
+import time
+import logging
+
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class LazySecretExponentDB(object):
@@ -29,7 +35,6 @@ class LazySecretExponentDB(object):
         self.wif_iterable = []
         return None
 
-private_key_db = {}
 
 class Signer:
 
@@ -40,15 +45,16 @@ class Signer:
 			seed = h2b('6ad72bdbc8b5c423cdc52be4b27352086b230879a0fd642bbbb19f5605941e3001eb70c6a53ea090f28d4b0e3033846b23ae2553c60a9618d7eb001c3aba2a30')
 			return seed, words
 
-		global private_key_db
-		private_key_db = shelve.open('key.db')
+		private_key_db = shelve.open('key.db', writeback=True)
+		wifs_db = shelve.open('wifs.db', writeback=True)
+
 		tx_unsigned = Tx.tx_from_hex(tx_unsigned)
 		key_index = int(key_index)
 		seed, words = BIP39_static_seed()
 		
 		master = BIP32Node.from_master_secret(seed, netcode)
 
-		print account_nr, key_index, netcode, tx_unsigned
+		logger.debug("%d %d %s %s", account_nr, key_index, netcode, tx_unsigned)
 
 		if netcode == "XTN":
 			key_path = "44H/1H/"
@@ -57,20 +63,42 @@ class Signer:
 
 		k = 0
 		wifs = []
+		start = time.time()
+
 		while k < key_index:
 			p1 = key_path + "%sH/0/%s" % (account_nr, k)
-			wifs.append( master.subkey_for_path(p1).wif(use_uncompressed=False) )
+			try:
+				existing = wifs_db[p1]
+				logger.debug("From cache: %s", existing)
+			except:
+				wifs_db[p1] = master.subkey_for_path(p1).wif(use_uncompressed=False)
+
+			wifs.append( wifs_db[p1] )
 			k += 1
 
 		p1 = key_path + "%sH/1" % (account_nr)
 
-		wifs.append( master.subkey_for_path(p1).wif(use_uncompressed=False) )
+		try:
+			existing = wifs_db[p1]
+			logger.debug("From cache: %s", existing)
+		except:
+			wifs_db[p1] = master.subkey_for_path(p1).wif(use_uncompressed=False)
 
+		wifs.append( wifs_db[p1] )
+
+		end = time.time()
+		logger.debug("Key generation took: %.7f", (end - start))
+
+		start = time.time()
 		tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, private_key_db))
+		end = time.time()
+		logger.debug("Signing took: %.7f", (end - start))
 
 		private_key_db.close()
+		wifs_db.close()
 
 		return tx_signed
-
-#tx = Tx.tx_from_hex('0100000001e592a74c5501acacce333e0592b7af21d7f6502a0236b0d990bc65cac09c1b790100000000ffffffff0251110000000000001976a91422f5a7614e1276c3cce52c7dfbf8c0a567d8d97088ac036e0000000000001976a914254702c244d402120bd9aa12e99939f7848b050288ac0000000064a60000000000001976a914254702c244d402120bd9aa12e99939f7848b050288ac')
-#print Signer.sign_tx(0, 0, tx, netcode="XTN")
+'''
+tx = '01000000018e0518c9fa9d6c54e5692c7b6c8b913bd55d790fac57f5265af07deec94410a90100000000ffffffff0265480000000000001976a9145e27c1c859310d5f5b75edbd2c93067e3b80b82788aca5170200000000001976a914be0a1a260aa3784747055567f0ac9d304c33d61888ac000000001a870200000000001976a914be0a1a260aa3784747055567f0ac9d304c33d61888ac'
+print Signer.sign_tx(2392, 8, tx, netcode="XTN")
+'''
