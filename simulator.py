@@ -180,7 +180,7 @@ def send_from_to(from_email, to_email, amount):
 
     if sender.has_unconfirmed_balance() or receiver.has_unconfirmed_balance():
         print "has_unconfirmed_balance, cannot send right now"
-        exit(1)
+        return
 
     try:
         tx_unsigned = sender.pay_to_address(addr,amount)
