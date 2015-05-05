@@ -11,20 +11,29 @@ from protocol import assemble_package, disassemble_package, assemble_package_tx_
 from transmitter import transmit_package
 
 msg_queue = Queue()
-
+prev_tx = {}
 
 class Consumer(threading.Thread):
 
     def run(self):
         global msg_queue
+        global prev_tx
         while True:
             msg = msg_queue.get()
             print "Consumed"
             p = disassemble_package(msg)
 
-            tx_signed = Signer.sign_tx(p.account_nr, p.key_index, p.tx, netcode=p.netcode)
+            if p.tx in prev_tx:
+                print "Found in prev_tx"
+                tx_signed_hex = prev_tx[p.tx]
+            else:
+                tx_signed = Signer.sign_tx(p.account_nr, p.key_index, p.tx, netcode=p.netcode)
 
-            tx_signed_hex = tx_signed.as_hex(include_unspents=True)
+                tx_signed_hex = tx_signed.as_hex(include_unspents=True)
+
+            prev_tx.clear()
+
+            prev_tx[p.tx] = tx_signed_hex
 
             package = assemble_package_tx_only(tx_signed_hex)
 
