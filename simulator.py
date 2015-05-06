@@ -196,20 +196,17 @@ def send_from_to(from_email, to_email, amount):
         return
 
     if not tx_unsigned is None:
-        tx_signed = sign_transaction(sender, tx_unsigned, netcode, sender.transaction_cb)
         d={}
         d['from'] = from_email
         d['to_addr'] = addr
         d['to_email'] =  to_email
-        d['tx_id'] = -1 # tx_signed.id()
         d['amount'] = amount
-        d['fee'] = -1 # tx_signed.fee()
         d['confirmations'] = -1
         d['date'] = str( datetime.datetime.now() )
         d['block'] = -1
         d['type'] = "STANDARD"
-
-        db.add_transaction(d)
+        sender.tx_info = d
+        tx_signed = sign_transaction(sender, tx_unsigned, netcode, sender.transaction_cb)
     else:
         print "Transaction failed"
 

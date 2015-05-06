@@ -10,6 +10,7 @@ from pycoin.tx.tx_utils import distribute_from_split_pool
 from pycoin.convention import tx_fee
 from picunia.collection.proof import ProofOfExistence
 from picunia.config.settings import Settings
+from picunia.database.storage import Storage
 import datetime
 import md5
 import json
@@ -45,7 +46,7 @@ class Account():
 		self.public_key = bip32node.wallet_key(as_private=False)
 		self.GAP_LIMIT = Settings.GAP_LIMIT
 		self.account_created = str( datetime.datetime.now() )
-
+		self.tx_info = {}
 		self.discovery()
 
 	@classmethod
@@ -347,8 +348,21 @@ class Account():
 
 	def transaction_cb(self, tx_hex):
 		logger.debug("Transaction size %d signed %s", len(tx_hex), self.email)
+		db = Storage()
+
 		ret = 0
 		tx = Tx.tx_from_hex(tx_hex)
+
+		if not self.tx_info:
+			raise ValueError("Must set transaction information: self.tx_info = dict")
+
+		self.tx_info['tx_id'] = tx.id()
+		self.tx_info['fee'] = tx.fee()
+
+		db.add_transaction(self.tx_info)
+
+		self.tx_info = {}
+
 		try:
 			ret = self.insight.send_tx(tx)
 		except urllib2.HTTPError as ex:
