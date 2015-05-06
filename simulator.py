@@ -172,8 +172,8 @@ def send_from_to(from_email, to_email, amount):
 
     receiver = json.loads(db.find_account(to_email))
 
-    sender = Account.from_json(sender, network)
-    receiver = Account.from_json(receiver, network)
+    sender = Account.from_json(sender)
+    receiver = Account.from_json(receiver)
 
     addr = receiver.get_bitcoin_address()
     db.update_account(json.loads(receiver.to_json()))

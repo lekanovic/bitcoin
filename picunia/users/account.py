@@ -9,6 +9,7 @@ from pycoin.tx.TxIn import TxIn
 from pycoin.tx.tx_utils import distribute_from_split_pool
 from pycoin.convention import tx_fee
 from picunia.collection.proof import ProofOfExistence
+from picunia.config.settings import Settings
 import datetime
 import md5
 import json
@@ -27,22 +28,22 @@ class InsufficientFunds(Exception):
 
 class Account():
 
-	def __init__(self, name, lastname, email, passwd, bip32node, network='mainnet'):
+	def __init__(self, name, lastname, email, passwd, bip32node):
 		self.name = name
 		self.lastname = lastname
 		self.passwd = passwd
 		self.email = email
 		self.subkeys = []
 		self.index = 0
-		self.network = network
-		if network == 'mainnet':
+		self.network = Settings.NETWORK
+		if self.network == 'mainnet':
 			self.netcode = 'BTC'
-		elif network == 'testnet':
+		elif self.network == 'testnet':
 			self.netcode = 'XTN'
-		self.insight = InsightService("http://localhost:3001")
+		self.insight = InsightService(Settings.INSIGHT_ADDRESS)
 		self.account_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
 		self.public_key = bip32node.wallet_key(as_private=False)
-		self.GAP_LIMIT = 5
+		self.GAP_LIMIT = Settings.GAP_LIMIT
 		self.account_created = str( datetime.datetime.now() )
 
 		self.discovery()
@@ -54,8 +55,7 @@ class Account():
 
 		return cls(json['name'], json['lastname'],
 				   json['email'], json['passwd'],
-				   BIP32Node.from_text(json['public_key']),
-				   network)
+				   BIP32Node.from_text(json['public_key']))
 
 	def get_key_info(self, bip32node):
 		child_number = bip32node.child_index()
