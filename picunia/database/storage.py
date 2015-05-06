@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 from bson.json_util import dumps
+from picunia.config.settings import Settings
 import datetime
 import os
 
@@ -7,16 +8,8 @@ import os
 class Storage(object):
 	"""docstring for Storage"""
 	def __init__(self):
-		if not 'MONGODB_ADDRESS' in os.environ:
-			URL = "localhost"
-		else:
-			URL = os.environ['MONGODB_ADDRESS']
 
-		if not 'MONGODB_PORT' in os.environ:
-			PORT = "27017"
-		else:
-			PORT =  os.environ['MONGODB_PORT']
-		URL = URL + ":" + PORT
+		URL = Settings.MONGODB_ADDRESS + ":" + Settings.MONGODB_PORT
 
 		self.client = MongoClient(URL)
 		self.dba = self.client.accountsDB
