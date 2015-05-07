@@ -4,6 +4,7 @@ import zlib, base64
 import time
 import select
 import logging
+from picunia.config.settings import Settings
 from signer import Signer
 from crypt.reedsolo import RSCodec, ReedSolomonError
 from Queue import Queue
@@ -85,7 +86,7 @@ class Receiver:
                         b = bytearray()
                         b.extend(packet)
 
-                        rs = RSCodec(10)
+                        rs = RSCodec(Settings.RSCODEC_NSYM)
                         try:
                             packet = rs.decode(b)
                             if self.compress:
@@ -128,13 +129,13 @@ class Receiver:
 receiver = None
 
 def start_service():
-    use_compression = True
-    baud = '3000'
     event = threading.Event()
     logger.info("Start Receiver")
 
     global receiver
-    receiver = Receiver(event, compress=use_compression, baudmode=baud)
+    receiver = Receiver(event,
+                        compress=Settings.USE_COMPRESSION,
+                        baudmode=Settings.BAUD_MINIMODEM)
     logger.info("Start Consumer")
 
     consumer = Consumer(event)
@@ -143,20 +144,18 @@ def start_service():
 
     #receiver.p.wait()
 
-def sign_tx(account_nr, key_index, netcode, tx, cb):
+def sign_tx(account_nr, key_index, tx, cb):
     if not isinstance(account_nr, int):
         raise TypeError("Expected int, got %s" % (type(account_nr),))
     if not isinstance(key_index, int):
         raise TypeError("Expected int, got %s" % (type(key_index),))
-    if not isinstance(netcode, str):
-        raise TypeError("Expected int, got %s" % (type(netcode),))
     if not isinstance(tx, unicode):
         raise TypeError("Expected int, got %s" % (type(tx),))
 
     global receiver
     receiver.reader.func_cb.append(cb)
 
-    package = assemble_package(account_nr, key_index, netcode, tx)
+    package = assemble_package(account_nr, key_index, tx)
 
     send_queue.put(package)
 
