@@ -37,10 +37,8 @@ class Account():
 		self.subkeys = []
 		self.index = 0
 		self.network = Settings.NETWORK
-		if self.network == 'mainnet':
-			self.netcode = 'BTC'
-		elif self.network == 'testnet':
-			self.netcode = 'XTN'
+		self.netcode = Settings.NETCODE
+
 		self.insight = InsightService(Settings.INSIGHT_ADDRESS)
 		self.account_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
 		self.public_key = bip32node.wallet_key(as_private=False)
@@ -50,7 +48,7 @@ class Account():
 		self.discovery()
 
 	@classmethod
-	def from_json(cls, json, network="mainnet"):
+	def from_json(cls, json):
 		cls.status = json['status']
 		cls.account_created = json['date']
 
