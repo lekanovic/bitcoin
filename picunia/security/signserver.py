@@ -9,6 +9,7 @@ from Queue import Queue
 from signer import Signer
 from protocol import assemble_package, disassemble_package, assemble_package_tx_only
 from transmitter import transmit_package
+from picunia.config.settings import Settings
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -79,7 +80,7 @@ class Receiver:
                         b = bytearray()
                         b.extend(packet)
 
-                        rs = RSCodec(10)
+                        rs = RSCodec(Settings.RSCODEC_NSYM)
                         try:
                             packet = rs.decode(b)
                             if self.compress:
@@ -105,10 +106,9 @@ class Receiver:
 
 
 if __name__ == "__main__":
-    use_compression = True
-    baud = '3000'
     logger.info("Start Receiver")
-    receiver = Receiver(compress=use_compression, baudmode=baud)
+    receiver = Receiver(compress=Settings.USE_COMPRESSION,
+                        baudmode=Settings.BAUD_MINIMODEM)
     logger.info("Start Consumer")
     consumer = Consumer()
     consumer.start()
