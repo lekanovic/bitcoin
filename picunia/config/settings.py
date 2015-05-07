@@ -6,3 +6,14 @@ class Settings():
 	INSIGHT_ADDRESS = 'http://localhost:3001'
 	GAP_LIMIT = 5
 	NETWORK = 'testnet'
+	if NETWORK == 'testnet':
+		NETCODE = 'XTN'
+		KEY_PATHS = "44H/1H/"
+	else:
+		NETCODE = 'BTC'
+		KEY_PATHS = "44H/0H/"
+	RSCODEC_NSYM = 64
+	USE_COMPRESSION = True
+	BAUD_MINIMODEM = '3000'
+	WIFS_DB = 'wifs.db'
+	KEYS_DB = 'key.db'
