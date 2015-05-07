@@ -1,14 +1,17 @@
 import subprocess
 import threading
-import time
 import select
 import zlib, base64
+import logging
 from threading import Thread
 from crypt.reedsolo import RSCodec, ReedSolomonError
 from Queue import Queue
 from signer import Signer
 from protocol import assemble_package, disassemble_package, assemble_package_tx_only
 from transmitter import transmit_package
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 msg_queue = Queue()
 prev_tx = {}
@@ -20,11 +23,10 @@ class Consumer(threading.Thread):
         global prev_tx
         while True:
             msg = msg_queue.get()
-            print "Consumed"
+            logger.debug("Consumed")
             p = disassemble_package(msg)
 
             if p.tx in prev_tx:
-                print "Found in prev_tx"
                 tx_signed_hex = prev_tx[p.tx]
             else:
                 tx_signed = Signer.sign_tx(p.account_nr, p.key_index, p.tx, netcode=p.netcode)
@@ -68,7 +70,6 @@ class Receiver:
                     if not line:
                         break
                     if line.startswith('### CARRIER '):
-                        start = time.time()
                         in_packet = True
                         packet = ''
                     elif line.startswith('### NOCARRIER '):
@@ -84,15 +85,13 @@ class Receiver:
                             if self.compress:
                                 packet = zlib.decompress(base64.b64decode(packet))
                         except:
-                            print "Package broken, wait for resend.."
+                            logger.debug("Package broken, wait for resend..")
                             package = assemble_package_tx_only(' RESEND '*5)
                             transmit_package(package)
                             continue
 
-                        print 'Got packet: %s' % packet
+                        logger.debug("Got packet: %s", packet)
                         msg_queue.put(packet)
-                        end = time.time()
-                        print "It took %s" % (end - start)
 
     def __init__(self, compress=True, **kwargs):
         self.p = subprocess.Popen(['minimodem', '-r', '-8', '-A',
@@ -108,9 +107,9 @@ class Receiver:
 if __name__ == "__main__":
     use_compression = True
     baud = '3000'
-    print "Start Receiver"
+    logger.info("Start Receiver")
     receiver = Receiver(compress=use_compression, baudmode=baud)
-    print "Start Consumer"
+    logger.info("Start Consumer")
     consumer = Consumer()
     consumer.start()
     receiver.p.wait()
