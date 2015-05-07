@@ -1,5 +1,5 @@
 from construct import Struct, UBInt32, String, CString, Container
-
+from picunia.config.settings import Settings
 
 #http://construct.readthedocs.org/en/latest/basics.html
 
@@ -10,10 +10,10 @@ package = Struct("package",
             CString("tx")
             )
 
-def assemble_package(account_nr, key_index, netcode, tx_unsigned):
+def assemble_package(account_nr, key_index, tx_unsigned):
 	c = Container(account_nr=account_nr,
 				  key_index=key_index,
-				  netcode=netcode,
+				  netcode=Settings.NETCODE,
 				  tx=tx_unsigned)
 	return package.build(c)
 
