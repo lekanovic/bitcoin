@@ -3,6 +3,7 @@ import zlib, base64
 import logging
 from crypt.reedsolo import RSCodec
 from Queue import Queue
+from picunia.config.settings import Settings
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ class Transmitter:
             percent = "{0:.0f}%".format(float(len(text))/s * 100)
             logger.debug("Packge compressed %s", percent)
 
-        rs = RSCodec(10)
+        rs = RSCodec(Settings.RSCODEC_NSYM)
         text = rs.encode(text)
 
         self.p.stdin.write(text)
@@ -33,8 +34,7 @@ class Transmitter:
         self.p.wait()
 
 def transmit_package(package):
-    use_compression = True
-    baud = '3000'
-    sender = Transmitter(compress=use_compression, baudmode=baud)
+    sender = Transmitter(compress=Settings.USE_COMPRESSION,
+                        baudmode=Settings.BAUD_MINIMODEM)
     sender.write(package)
     sender.close()
