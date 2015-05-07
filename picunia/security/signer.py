@@ -3,6 +3,7 @@ from pycoin.serialize import h2b
 from pycoin.tx.Tx import Tx
 from pycoin.encoding import wif_to_secret_exponent
 from pycoin.tx.pay_to import build_hash160_lookup
+from picunia.config.settings import Settings
 import shelve
 import time
 import logging
@@ -45,8 +46,8 @@ class Signer:
 			seed = h2b('6ad72bdbc8b5c423cdc52be4b27352086b230879a0fd642bbbb19f5605941e3001eb70c6a53ea090f28d4b0e3033846b23ae2553c60a9618d7eb001c3aba2a30')
 			return seed, words
 
-		private_key_db = shelve.open('key.db', writeback=True)
-		wifs_db = shelve.open('wifs.db', writeback=True)
+		private_key_db = shelve.open(Settings.KEYS_DB, writeback=True)
+		wifs_db = shelve.open(Settings.WIFS_DB, writeback=True)
 
 		tx_unsigned = Tx.tx_from_hex(tx_unsigned)
 		key_index = int(key_index)
@@ -56,10 +57,7 @@ class Signer:
 
 		logger.debug("%d %d %s %s", account_nr, key_index, netcode, tx_unsigned)
 
-		if netcode == "XTN":
-			key_path = "44H/1H/"
-		elif netcode == "BTC":
-			key_path = "44H/1H/"
+		key_path = Settings.KEY_PATHS
 
 		k = 0
 		wifs = []
