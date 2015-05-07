@@ -24,7 +24,7 @@ def assemble_package_tx_only(tx_signed):
 
       tx_signed - signed transaction as HEX.
   '''
-  return assemble_package(0, 0, "XXX", tx_signed)
+  return assemble_package(0, 0, tx_signed)
 
 def disassemble_package(p):
 	return package.parse(p)
