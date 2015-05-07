@@ -63,25 +63,99 @@ def get_chucknorris_joke():
 		fetch_jokes()
 	return joke_database.pop()
 
-def send_chucknorris_joke_as_proofofexistens(sender):
-    joke = get_chucknorris_joke()
-    cmd = "python cc.py -p %s:\"%s\"" % (sender['email'], joke)
+def send_chucknorris_joke_as_proofofexistens(from_email):
+    db = Storage()
+    tx_unsigned = 0
+    proofofexistens_msg = get_chucknorris_joke()
 
-    proc = subprocess.Popen([cmd],
-                    stdout=subprocess.PIPE, shell=True)
-    (out, err) = proc.communicate()
+    # Find the user in database
+    sender = json.loads(db.find_account(from_email))
+    # Add the user to Account object
+    sender = Account.from_json(sender,network)
 
-    print out
+    try:
+        tx_unsigned = sender.proof_of_existens(proofofexistens_msg)
+    except InsufficientFunds:
+        balance = sender.wallet_balance()
+        a = json.loads(db.find_account(from_email))
+        if a['wallet-balance'] != balance:
+            print "Updating balance from %d to %d" % (a['wallet-balance'], balance)
+            db.update_account(a)
+        else:
+            print "Transaction failed amount too small.."
+        return
 
-def multisig_transacion(sender, receiver, escrow, amount):
-    cmd = "python cc.py -m %s:%s:%s:%d" % (sender, receiver, escrow,  amount)
+    if not tx_unsigned is None:
+        d={}
+        d['from'] = from_email
+        d['to_addr'] = "N/A"
+        d['to_email'] =  "N/A"
+        d['amount'] = 10000
+        d['confirmations'] = -1
+        d['date'] = str( datetime.datetime.now() )
+        d['block'] = -1
+        d['type'] = "OPRETURN"
+        d['message'] = proofofexistens_msg
+        print d
+        sender.tx_info = d
+        sign_transaction(sender, tx_unsigned, netcode, sender.transaction_cb)
 
-    print sender
-    proc = subprocess.Popen([cmd],
-                    stdout=subprocess.PIPE, shell=True)
-    (out, err) = proc.communicate()
+    else:
+        print "Transaction failed"
 
-    print out
+def multisig_transacion(from_email, to_email, escrow_email, amount):
+        db = Storage()
+        tx_unsigned = 0
+
+        sender = json.loads(db.find_account(from_email))
+        receiver = json.loads(db.find_account(to_email))
+        escrow = json.loads(db.find_account(escrow_email))
+
+        sender = Account.from_json(sender,network)
+        receiver = Account.from_json(receiver,network)
+        escrow = Account.from_json(escrow,network)
+
+        keys = []
+        keys.append(sender.get_key(0))
+        keys.append(receiver.get_key(0))
+        keys.append(escrow.get_key(0))
+
+        tx_multi_unsigned, multi_address = sender.multisig_2_of_3(keys)
+
+        # Now that we have created the multisig address let's send some money to it
+        if sender.has_unconfirmed_balance():
+            print "has_unconfirmed_balance, cannot send right now"
+            return
+
+        try:
+            tx_unsigned = sender.pay_to_address(multi_address,amount)
+        except InsufficientFunds:
+            balance = sender.wallet_balance()
+            a = json.loads(db.find_account(from_email))
+            if a['wallet-balance'] != balance:
+                print "Updating balance from %d to %d" % (a['wallet-balance'], balance)
+                db.update_account(a)
+            else:
+                print "Transaction failed amount too small.."
+            return
+
+        if not tx_unsigned is None:
+            d={}
+            d['from'] = from_email
+            d['to_addr'] = multi_address
+            d['to_email'] =  to_email
+            d['escrow'] = escrow_email
+            d['amount'] = amount
+            d['confirmations'] = -1
+            d['date'] = str( datetime.datetime.now() )
+            d['block'] = -1
+            d['type'] = "MULTISIG"
+
+            sender.tx_info = d
+            sign_transaction(sender, tx_unsigned, netcode, sender.transaction_cb)
+
+        else:
+            print "Transaction failed"
 
 def call_api(items=0):
     url = "http://api.randomuser.me/?results=%d" % items
@@ -152,16 +226,17 @@ def one_round():
     sender, balance = find_account_with_balance()
     receiver = find_random_account()
     amount = balance / 10
-    '''
+
     if randint(0,20) == 10:
-        send_chucknorris_joke_as_proofofexistens(sender)
+        send_chucknorris_joke_as_proofofexistens(sender['email'])
 
     if randint(0,20) == 10:
         escrow = find_random_account()
         multisig_transacion(sender['email'], receiver['email'], escrow['email'], amount)
-    '''
+
     print "%s sending %d to %s" % (sender['email'], amount, receiver['email'])
     send_from_to(sender['email'], receiver['email'], amount)
+
 
 def send_from_to(from_email, to_email, amount):
     tx_unsigned = 0
@@ -205,8 +280,10 @@ def send_from_to(from_email, to_email, amount):
         d['date'] = str( datetime.datetime.now() )
         d['block'] = -1
         d['type'] = "STANDARD"
+
         sender.tx_info = d
-        tx_signed = sign_transaction(sender, tx_unsigned, netcode, sender.transaction_cb)
+        sign_transaction(sender, tx_unsigned, netcode, sender.transaction_cb)
+
     else:
         print "Transaction failed"
 
