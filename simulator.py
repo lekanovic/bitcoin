@@ -45,11 +45,11 @@ def transaction_cb(tx_hex):
         return -1
     print json.loads(ret)['txid']
 
-def sign_transaction(account, tx_unsigned, netcode, callback):
+def sign_transaction(account, tx_unsigned, callback):
     account_nr = int(account.account_index)
     key_index = int(account.index)
     tx_hex = tx_unsigned.as_hex(include_unspents=True)
-    sign_tx(account_nr, key_index, netcode, tx_hex, cb=callback)
+    sign_tx(account_nr, key_index, tx_hex, cb=callback)
 
 def fetch_jokes():
     url = "http://api.icndb.com/jokes/random/1000"
@@ -98,7 +98,7 @@ def send_chucknorris_joke_as_proofofexistens(from_email):
         d['message'] = proofofexistens_msg
         print d
         sender.tx_info = d
-        sign_transaction(sender, tx_unsigned, netcode, sender.transaction_cb)
+        sign_transaction(sender, tx_unsigned, sender.transaction_cb)
 
     else:
         print "Transaction failed"
@@ -152,7 +152,7 @@ def multisig_transacion(from_email, to_email, escrow_email, amount):
             d['type'] = "MULTISIG"
 
             sender.tx_info = d
-            sign_transaction(sender, tx_unsigned, netcode, sender.transaction_cb)
+            sign_transaction(sender, tx_unsigned, sender.transaction_cb)
 
         else:
             print "Transaction failed"
@@ -282,7 +282,7 @@ def send_from_to(from_email, to_email, amount):
         d['type'] = "STANDARD"
 
         sender.tx_info = d
-        sign_transaction(sender, tx_unsigned, netcode, sender.transaction_cb)
+        sign_transaction(sender, tx_unsigned, sender.transaction_cb)
 
     else:
         print "Transaction failed"
