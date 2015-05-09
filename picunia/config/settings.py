@@ -15,5 +15,6 @@ class Settings():
 	RSCODEC_NSYM = 64
 	USE_COMPRESSION = True
 	BAUD_MINIMODEM = '3000'
-	WIFS_DB = 'wifs.db'
-	KEYS_DB = 'key.db'
+	WIFS_DB = '/raid10/wifs.db'
+	KEYS_DB = '/raid10/key.db'
+	SEED_FILE = '/raid10/masterseed'
