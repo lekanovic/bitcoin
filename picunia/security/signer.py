@@ -41,7 +41,9 @@ class Signer:
 
 	@classmethod
 	def sign_tx(cls, account_nr, key_index, tx_unsigned, netcode="BTC"):
-		def BIP39_static_seed():
+		def BIP39_mnemonics():
+			#words = open(Settings.SEED_FILE).read()
+			#seed = Mnemonic.to_seed(words)
 			words = 'category fiscal fuel great review rather useful shop middle defense cube vacuum resource fiber special nurse chief category mask display bag echo concert click february fame tenant innocent affair usual hole soon bean adjust shoe voyage immune chest gaze chaos tip way glimpse sword tray craft blur seminar'
 			seed = h2b('6ad72bdbc8b5c423cdc52be4b27352086b230879a0fd642bbbb19f5605941e3001eb70c6a53ea090f28d4b0e3033846b23ae2553c60a9618d7eb001c3aba2a30')
 			return seed, words
@@ -53,9 +55,9 @@ class Signer:
 		key_index = int(key_index)
 		seed, words = BIP39_static_seed()
 		
-		master = BIP32Node.from_master_secret(seed, netcode)
+		master = BIP32Node.from_master_secret(seed, Settings.NETCODE)
 
-		logger.debug("%d %d %s %s", account_nr, key_index, netcode, tx_unsigned)
+		logger.debug("%d %d %s %s", account_nr, key_index, Settings.NETCODE, tx_unsigned)
 
 		key_path = Settings.KEY_PATHS
 
