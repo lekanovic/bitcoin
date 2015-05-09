@@ -71,7 +71,7 @@ def send_chucknorris_joke_as_proofofexistens(from_email):
     # Find the user in database
     sender = json.loads(db.find_account(from_email))
     # Add the user to Account object
-    sender = Account.from_json(sender,network)
+    sender = Account.from_json(sender)
 
     try:
         tx_unsigned = sender.proof_of_existens(proofofexistens_msg)
@@ -111,9 +111,9 @@ def multisig_transacion(from_email, to_email, escrow_email, amount):
         receiver = json.loads(db.find_account(to_email))
         escrow = json.loads(db.find_account(escrow_email))
 
-        sender = Account.from_json(sender,network)
-        receiver = Account.from_json(receiver,network)
-        escrow = Account.from_json(escrow,network)
+        sender = Account.from_json(sender)
+        receiver = Account.from_json(receiver)
+        escrow = Account.from_json(escrow)
 
         keys = []
         keys.append(sender.get_key(0))
