@@ -27,23 +27,19 @@ class InsufficientFunds(Exception):
 # Test BIP32 wallet
 # https://dcpos.github.io/bip39/
 
-class Account():
+class Wallet():
 
-	def __init__(self, name, lastname, email, passwd, bip32node):
-		self.name = name
-		self.lastname = lastname
-		self.passwd = passwd
-		self.email = email
+	def __init__(self, bip32node):
+
 		self.subkeys = []
 		self.index = 0
 		self.network = Settings.NETWORK
 		self.netcode = Settings.NETCODE
-
 		self.insight = InsightService(Settings.INSIGHT_ADDRESS)
-		self.account_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
+		self.wallet_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
 		self.public_key = bip32node.wallet_key(as_private=False)
 		self.GAP_LIMIT = Settings.GAP_LIMIT
-		self.account_created = str( datetime.datetime.now() )
+		self.wallet_created = str( datetime.datetime.now() )
 		self.tx_info = {}
 		self.discovery()
 
@@ -52,9 +48,7 @@ class Account():
 		cls.status = json['status']
 		cls.account_created = json['date']
 
-		return cls(json['name'], json['lastname'],
-				   json['email'], json['passwd'],
-				   BIP32Node.from_text(json['public_key']))
+		return cls(BIP32Node.from_text(json['public_key']))
 
 	def get_key_info(self, bip32node):
 		child_number = bip32node.child_index()
@@ -73,20 +67,11 @@ class Account():
 		return self.subkeys
 
 	def get_account_number(self):
-		return self.account_index
+		return self.wallet_index
 
 	def get_bitcoin_address(self):
 		self.discovery()
 		return self.subkeys[-1]
-
-	def get_name(self):
-		return self.name
-
-	def get_lastname(self):
-		return self.lastname
-
-	def get_email(self):
-		return self.email
 
 	def get_key(self, index=-1):
 		if index == -1:
@@ -171,13 +156,11 @@ class Account():
 			d['amount'] = amount
 			key_amount.append(d)
 
-		return json.dumps({"name" : self.name, "lastname" : self.lastname,
-						   "email" : self.email, "passwd" : self.passwd,
-						   "account_index" : self.account_index,
+		return json.dumps({"account_index" : self.wallet_index,
 						   "wallet-balance" : balance,
 						   "status": "active",
 						   "public_key": self.public_key,
-						   "date": self.account_created,
+						   "date": self.wallet_created,
 						   "spendable" : key_amount}, indent=4)
 
 
