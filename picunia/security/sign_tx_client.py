@@ -5,7 +5,6 @@ import time
 import select
 import logging
 from picunia.config.settings import Settings
-from signer import Signer
 from crypt.reedsolo import RSCodec, ReedSolomonError
 from Queue import Queue
 from protocol import assemble_package, disassemble_package, assemble_package_tx_only
@@ -155,12 +154,42 @@ def sign_tx(account_nr, key_index, tx, cb):
     global receiver
     receiver.reader.func_cb.append(cb)
 
-    package = assemble_package(account_nr, key_index, tx)
+    package = assemble_package(account_nr, key_index, tx, rtype="TXN")
 
     send_queue.put(package)
 
+def request_public_key(account_nr, cb):
+    global receiver
+    receiver.reader.func_cb.append(cb)
+
+    # Since we are requesting a public key we can leave tx empty.
+    # And key_index is zero since this is the first key.
+    package = assemble_package(account_nr, 0, '', rtype="KEY")
+
+    send_queue.put(package)
+
+# TESTING ----------------------------
 '''
-sign_tx(4657,4,'XTN', '01000000013ee4638534d6a48979e79fad3a98158f0c1265f247560af07ec20fb1488d0b910000000000ffffffff02ecff0000000000001976a914fd906708ad09ee08bc03cda5db4983e3a817b73b88ac593b0800000000001976a9145e518af5696b29693c266086d46fd73943d87d1f88ac0000000055620900000000001976a9143575a1070562bc3d348b557a9e51722e2878697288ac')
+import time
+start_service()
+time.sleep(5)
+
+def callback(tx_hex):
+    print "callback called"
+    print tx_hex
+
+for i in range(0,5):
+    request_public_key(i, callback)
+
+time.sleep(500000)
+
+
+
+t = u'01000000013ee4638534d6a48979e79fad3a98158f0c1265f247560af07ec20fb1488d0b910000000000ffffffff02ecff0000000000001976a914fd906708ad09ee08bc03cda5db4983e3a817b73b88ac593b0800000000001976a9145e518af5696b29693c266086d46fd73943d87d1f88ac0000000055620900000000001976a9143575a1070562bc3d348b557a9e51722e2878697288ac' 
+sign_tx(4657,4, t, callback)
+time.sleep(500000)
+
+
 sign_tx(4967,8,'XTN', '0100000002d636cae1cb2db9f586ae4e7cccd56e613f87cc6bfa687f659de2b26e65b5fb1b0100000000ffffffff1a054bb7b551b296d7bfdddda81c591430da90f5b9ac28fe07391b5646c8da710000000000ffffffff02a0050000000000001976a9146be7733f895908c7a8e412e29580c88bdb105c7488ac930b0000000000001976a914a6a2371e74f88918dd705d9a23a7d1ac991046f588ac000000001d2b0000000000001976a914a6a2371e74f88918dd705d9a23a7d1ac991046f588ac260d0000000000001976a914a41d436944bec4107f7124463071c9adbcf5b6ca88ac')
 sign_tx(925,10,'XTN', '0100000001f87239ac1658887a50e5f0a9b85b5932625cf5327429acaf5a7d922b8cd81f240100000000ffffffff0225220000000000001976a914841de1c8c900a6902528f8924254f8da56c559e388ac27c00000000000001976a9149476f505c1b7d7b31e1ad1fae8acf967a38210ba88ac000000005c090100000000001976a9149476f505c1b7d7b31e1ad1fae8acf967a38210ba88ac')
 sign_tx(6865,2,'XTN', '010000000152ee011e4d01b7db9a7940f9440cd28688722e3905457f64da5f4fc5e8c7c16e0100000000ffffffff0292250000000000001976a91459d55e2898fc2016c1d4a11d61dadff348b3ecd888ac142b0100000000001976a914328047f57b5bb98b668a6e0fa5180babf7e027b988ac00000000b6770100000000001976a914328047f57b5bb98b668a6e0fa5180babf7e027b988ac')

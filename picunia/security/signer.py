@@ -36,48 +36,47 @@ class LazySecretExponentDB(object):
         self.wif_iterable = []
         return None
 
+def BIP39_mnemonics():
+	words = open(Settings.SEED_FILE).read()
+	seed = Mnemonic.to_seed(words)
+	return seed, words
 
-class Signer:
 
-	@classmethod
-	def sign_tx(cls, account_nr, key_index, tx_unsigned, netcode="BTC"):
-		def BIP39_mnemonics():
-			#words = open(Settings.SEED_FILE).read()
-			#seed = Mnemonic.to_seed(words)
-			words = 'category fiscal fuel great review rather useful shop middle defense cube vacuum resource fiber special nurse chief category mask display bag echo concert click february fame tenant innocent affair usual hole soon bean adjust shoe voyage immune chest gaze chaos tip way glimpse sword tray craft blur seminar'
-			seed = h2b('6ad72bdbc8b5c423cdc52be4b27352086b230879a0fd642bbbb19f5605941e3001eb70c6a53ea090f28d4b0e3033846b23ae2553c60a9618d7eb001c3aba2a30')
-			return seed, words
+def get_public_key(account_nr):
+	seed, words = BIP39_mnemonics()
+	master = BIP32Node.from_master_secret(seed, Settings.NETCODE)
 
-		private_key_db = shelve.open(Settings.KEYS_DB, writeback=True)
-		wifs_db = shelve.open(Settings.WIFS_DB, writeback=True)
+	key_path = Settings.KEY_PATHS
 
-		tx_unsigned = Tx.tx_from_hex(tx_unsigned)
-		key_index = int(key_index)
-		seed, words = BIP39_static_seed()
-		
-		master = BIP32Node.from_master_secret(seed, Settings.NETCODE)
+	path = key_path + "%dH.pub" % account_nr
 
-		logger.debug("%d %d %s %s", account_nr, key_index, Settings.NETCODE, tx_unsigned)
+	account_keys = master.subkey_for_path( path ).as_text()
 
-		key_path = Settings.KEY_PATHS
+	logger.debug("%d %s %s", account_nr, Settings.NETCODE, account_keys)
 
-		k = 0
-		wifs = []
-		start = time.time()
+	return account_keys
 
-		while k < key_index:
-			p1 = key_path + "%sH/0/%s" % (account_nr, k)
-			try:
-				existing = wifs_db[p1]
-				logger.debug("From cache: %s", existing)
-			except:
-				wifs_db[p1] = master.subkey_for_path(p1).wif(use_uncompressed=False)
+def sign_tx(account_nr, key_index, tx_unsigned, netcode="BTC"):
 
-			wifs.append( wifs_db[p1] )
-			k += 1
+	private_key_db = shelve.open(Settings.KEYS_DB, writeback=True)
+	wifs_db = shelve.open(Settings.WIFS_DB, writeback=True)
 
-		p1 = key_path + "%sH/1" % (account_nr)
+	tx_unsigned = Tx.tx_from_hex(tx_unsigned)
+	key_index = int(key_index)
+	seed, words = BIP39_mnemonics()
 
+	master = BIP32Node.from_master_secret(seed, Settings.NETCODE)
+
+	logger.debug("%d %d %s %s", account_nr, key_index, Settings.NETCODE, tx_unsigned)
+
+	key_path = Settings.KEY_PATHS
+
+	k = 0
+	wifs = []
+	start = time.time()
+
+	while k < key_index:
+		p1 = key_path + "%sH/0/%s" % (account_nr, k)
 		try:
 			existing = wifs_db[p1]
 			logger.debug("From cache: %s", existing)
@@ -85,19 +84,30 @@ class Signer:
 			wifs_db[p1] = master.subkey_for_path(p1).wif(use_uncompressed=False)
 
 		wifs.append( wifs_db[p1] )
+		k += 1
 
-		end = time.time()
-		logger.debug("Key generation took: %.7f", (end - start))
+	p1 = key_path + "%sH/1" % (account_nr)
 
-		start = time.time()
-		tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, private_key_db))
-		end = time.time()
-		logger.debug("Signing took: %.7f", (end - start))
+	try:
+		existing = wifs_db[p1]
+		logger.debug("From cache: %s", existing)
+	except:
+		wifs_db[p1] = master.subkey_for_path(p1).wif(use_uncompressed=False)
 
-		private_key_db.close()
-		wifs_db.close()
+	wifs.append( wifs_db[p1] )
 
-		return tx_signed
+	end = time.time()
+	logger.debug("Key generation took: %.7f", (end - start))
+
+	start = time.time()
+	tx_signed = tx_unsigned.sign(LazySecretExponentDB(wifs, private_key_db))
+	end = time.time()
+	logger.debug("Signing took: %.7f", (end - start))
+
+	private_key_db.close()
+	wifs_db.close()
+
+	return tx_signed
 '''
 tx = '01000000018e0518c9fa9d6c54e5692c7b6c8b913bd55d790fac57f5265af07deec94410a90100000000ffffffff0265480000000000001976a9145e27c1c859310d5f5b75edbd2c93067e3b80b82788aca5170200000000001976a914be0a1a260aa3784747055567f0ac9d304c33d61888ac000000001a870200000000001976a914be0a1a260aa3784747055567f0ac9d304c33d61888ac'
 print Signer.sign_tx(2392, 8, tx, netcode="XTN")

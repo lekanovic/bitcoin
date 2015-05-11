@@ -6,7 +6,7 @@ import logging
 from threading import Thread
 from crypt.reedsolo import RSCodec, ReedSolomonError
 from Queue import Queue
-from signer import Signer
+from signer import get_public_key, sign_tx
 from protocol import assemble_package, disassemble_package, assemble_package_tx_only
 from transmitter import transmit_package
 from picunia.config.settings import Settings
@@ -19,20 +19,35 @@ prev_tx = {}
 
 class Consumer(threading.Thread):
 
+    def sign(self, p):
+        tx_signed_hex = ''
+        if p.rtype == "KEY":
+            print "KEY request"
+            tx_signed = get_public_key(p.account_nr)
+            tx_signed_hex = tx_signed
+            print tx_signed_hex
+        elif p.rtype == "TXN":
+            print "TXN request"
+            tx_signed = sign_tx(p.account_nr, p.key_index, p.tx, netcode=p.netcode)
+            tx_signed_hex = tx_signed.as_hex(include_unspents=True)
+            print tx_signed_hex
+        else:
+            raise ValueError("Package header incorrect")
+        return tx_signed_hex
+
     def run(self):
         global msg_queue
         global prev_tx
         while True:
             msg = msg_queue.get()
             logger.debug("Consumed")
+            tx_signed_hex = ''
             p = disassemble_package(msg)
 
             if p.tx in prev_tx:
                 tx_signed_hex = prev_tx[p.tx]
             else:
-                tx_signed = Signer.sign_tx(p.account_nr, p.key_index, p.tx, netcode=p.netcode)
-
-                tx_signed_hex = tx_signed.as_hex(include_unspents=True)
+                tx_signed_hex = self.sign(p)
 
             prev_tx.clear()
 
