@@ -4,6 +4,7 @@ from pycoin.tx.Tx import Tx
 from pycoin.encoding import wif_to_secret_exponent
 from pycoin.tx.pay_to import build_hash160_lookup
 from picunia.config.settings import Settings
+from mnemonic import Mnemonic
 import shelve
 import time
 import logging
