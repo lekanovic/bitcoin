@@ -143,9 +143,9 @@ def start_service():
 
     #receiver.p.wait()
 
-def sign_tx(account_nr, key_index, tx, cb):
-    if not isinstance(account_nr, int):
-        raise TypeError("Expected int, got %s" % (type(account_nr),))
+def sign_tx(wallet_index, key_index, tx, cb):
+    if not isinstance(wallet_index, int):
+        raise TypeError("Expected int, got %s" % (type(wallet_index),))
     if not isinstance(key_index, int):
         raise TypeError("Expected int, got %s" % (type(key_index),))
     if not isinstance(tx, unicode):
@@ -154,17 +154,17 @@ def sign_tx(account_nr, key_index, tx, cb):
     global receiver
     receiver.reader.func_cb.append(cb)
 
-    package = assemble_package(account_nr, key_index, tx, rtype="TXN")
+    package = assemble_package(wallet_index, key_index, tx, rtype="TXN")
 
     send_queue.put(package)
 
-def request_public_key(account_nr, cb):
+def request_public_key(wallet_index, cb):
     global receiver
     receiver.reader.func_cb.append(cb)
 
     # Since we are requesting a public key we can leave tx empty.
     # And key_index is zero since this is the first key.
-    package = assemble_package(account_nr, 0, '', rtype="KEY")
+    package = assemble_package(wallet_index, 0, '', rtype="KEY")
 
     send_queue.put(package)
 

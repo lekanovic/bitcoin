@@ -10,16 +10,16 @@ from picunia.config.settings import Settings
 '''
 package = Struct("package",
             String("rtype", 3),
-            UBInt32("account_nr"),
+            UBInt32("wallet_index"),
             UBInt32("key_index"),
             String("netcode", 3),
             CString("tx")
             )
 
-def assemble_package(account_nr, key_index, tx_unsigned, rtype="TXN"):
+def assemble_package(wallet_index, key_index, tx_unsigned, rtype="TXN"):
 	c = Container(
           rtype=rtype,
-          account_nr=account_nr,
+          wallet_index=wallet_index,
 				  key_index=key_index,
 				  netcode=Settings.NETCODE,
 				  tx=tx_unsigned)

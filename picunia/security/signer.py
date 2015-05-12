@@ -43,21 +43,21 @@ def BIP39_mnemonics():
 	return seed, words
 
 
-def get_public_key(account_nr):
+def get_public_key(wallet_index):
 	seed, words = BIP39_mnemonics()
 	master = BIP32Node.from_master_secret(seed, Settings.NETCODE)
 
 	key_path = Settings.KEY_PATHS
 
-	path = key_path + "%dH.pub" % account_nr
+	path = key_path + "%dH.pub" % wallet_index
 
 	account_keys = master.subkey_for_path( path ).as_text()
 
-	logger.debug("%d %s %s", account_nr, Settings.NETCODE, account_keys)
+	logger.debug("%d %s %s", wallet_index, Settings.NETCODE, account_keys)
 
 	return account_keys
 
-def sign_tx(account_nr, key_index, tx_unsigned, netcode="BTC"):
+def sign_tx(wallet_index, key_index, tx_unsigned, netcode="BTC"):
 
 	private_key_db = shelve.open(Settings.KEYS_DB, writeback=True)
 	wifs_db = shelve.open(Settings.WIFS_DB, writeback=True)
@@ -68,7 +68,7 @@ def sign_tx(account_nr, key_index, tx_unsigned, netcode="BTC"):
 
 	master = BIP32Node.from_master_secret(seed, Settings.NETCODE)
 
-	logger.debug("%d %d %s %s", account_nr, key_index, Settings.NETCODE, tx_unsigned)
+	logger.debug("%d %d %s %s", wallet_index, key_index, Settings.NETCODE, tx_unsigned)
 
 	key_path = Settings.KEY_PATHS
 
@@ -77,7 +77,7 @@ def sign_tx(account_nr, key_index, tx_unsigned, netcode="BTC"):
 	start = time.time()
 
 	while k < key_index:
-		p1 = key_path + "%sH/0/%s" % (account_nr, k)
+		p1 = key_path + "%sH/0/%s" % (wallet_index, k)
 		try:
 			existing = wifs_db[p1]
 			logger.debug("From cache: %s", existing)
@@ -87,7 +87,7 @@ def sign_tx(account_nr, key_index, tx_unsigned, netcode="BTC"):
 		wifs.append( wifs_db[p1] )
 		k += 1
 
-	p1 = key_path + "%sH/1" % (account_nr)
+	p1 = key_path + "%sH/1" % (wallet_index)
 
 	try:
 		existing = wifs_db[p1]
