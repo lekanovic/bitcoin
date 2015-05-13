@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from bson.json_util import dumps
+from bson.json_util import dumps, loads
 from picunia.config.settings import Settings
 import datetime
 import os
@@ -13,6 +13,7 @@ class Storage(object):
 
 		self.client = MongoClient(URL)
 		self.dba = self.client.accountsDB
+		self.dbw = self.client.walletDB
 		self.dbt = self.client.TransactionDB
 		self.db_blk = self.client.blockDB
 
@@ -27,9 +28,16 @@ class Storage(object):
 				Bool: True if account was added, False if account alread exists
 		'''
 		res = self.find_account(account)
-		if res != "null":
+		if res != None:
 			return False
 		self.dba.account.insert(account)
+		return True
+
+	def add_wallet(self, wallet):
+		res = self.dba.wallet.find_one({"wallet_index" : wallet})
+		if res != None:
+			return False
+		self.dbw.wallet.insert(wallet)
 		return True
 
 	def __find_account(self, account):
@@ -39,7 +47,7 @@ class Storage(object):
 	def update_account(self, account):
 		res = self.__find_account(account)
 		self.dba.account.update({'_id': res['_id']}, account,upsert=False, multi=False)
-
+	'''
 	def update_balance(self, account, new_balance):
 		res = self.__find_account(account)
 		# Update balance for a specific account
@@ -57,7 +65,7 @@ class Storage(object):
 		# Update balance for a specific account
 		self.dba.account.update({'_id': res['_id']},
 			{'$set': {'status': new_status}},upsert=False, multi=False)
-
+	'''
 	def find_account(self, account):
 		if type(account) == str:
 			res = self.dba.account.find_one({"email" : account})
@@ -68,7 +76,8 @@ class Storage(object):
 		else:
 			raise ValueError("Wrong type")
 
-		return dumps(res, indent=4)
+		return loads(dumps(res))
+
 
 	def find_account_index(self, account):
 		if type(account) == str:
@@ -85,6 +94,9 @@ class Storage(object):
 	def get_all_accounts(self):
 		return [dumps(account, indent=4) for account in self.dba.account.find()]
 
+	def get_number_of_wallets(self):
+		return self.dbw.wallet.count()
+
 	def get_number_of_accounts(self):
 		return self.dba.account.count()
 
@@ -92,6 +104,7 @@ class Storage(object):
 		if which == "all":
 			self.dba.account.drop()
 			self.dbt.transaction.drop()
+			self.dbw.wallet.drop()
 		elif which == "account":
 			self.dba.account.drop()
 		elif which == "transaction":
@@ -154,41 +167,25 @@ doc2 = {
 		"public_key": "tpubDCVcrTzunZwuc67hSQHmjHN8efpCVw4aZDUqvztyryj8QDpsvjxipein85QKt3ZuWXGapnuYVBEUGyvAQMJBNpruqxqStQ5RdrLhRCzNtuc",
 		"date":  str( datetime.datetime.now() )
 		}
-d = {}
-d['from'] = "ethel.herrera14@example.com"
-d['to_addr'] = "mojERYaVYcXPkUhXGEFMcJ3srXGGfN31gR"
-d['to_email'] =  "riley.sims25@example.com"
-d['tx_id'] = "d42f6f4d47ea9053b84fa2acdb01b247575c7f103bb5ca4e968d8d1d5ef993e9"
-d['amount'] = 22830
-d['fee'] = 10000
-d['confirmations'] = 10
-d['date'] = "2015-04-04 14:49:34.006587"
-d['block'] = 370000
-
 
 '''
-import json
-a = Storage()
-a.update_transaction(d)
+db = Storage()
 
-for j in a.get_unconfirmed_transactions():
-	print j
+account = {}
+account["status"] = "active"
+account["name"] = "Radovan"
+account["lastname"] = "Lekanovic"
+account["email"] = "lekanovic@gmail.com"
+account["password"] = "hemils"
+account["account_index"] = db.get_number_of_accounts()
+account["created"] = str( datetime.datetime.now() )
 
+db.add_account(account)
 
+res = db.find_account(account["email"])
 
+res["name"] = "Nils"
+res["password"] = "smyga"
 
-print a.add_account(doc1)
-print a.add_account(doc2)
-
-
-a.update_balance(doc1, 8989898)
-a.update_balance(doc2, 6767676)
-a.update_passwd(doc2, "majana82")
-a.update_status(doc2, "inactive")
-for i in a.get_all_accounts():
-	print i['account_index']
-
-print a.get_number_of_accounts()
-
-a.drop_database()
+db.update_account(res)
 '''
