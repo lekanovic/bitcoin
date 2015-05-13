@@ -31,6 +31,7 @@ class Wallet():
 
 	def __init__(self, bip32node):
 
+		bip32node = BIP32Node.from_text(bip32node)
 		self.subkeys = []
 		self.index = 0
 		self.network = Settings.NETWORK
@@ -156,8 +157,8 @@ class Wallet():
 			d['amount'] = amount
 			key_amount.append(d)
 
-		return json.dumps({"account_index" : self.wallet_index,
-						   "wallet-balance" : balance,
+		return json.dumps({"wallet_index" : self.wallet_index,
+						   "wallet_balance" : balance,
 						   "status": "active",
 						   "public_key": self.public_key,
 						   "date": self.wallet_created,
