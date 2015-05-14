@@ -8,19 +8,22 @@ import datetime
 class AccountExistException():
 	pass
 
+wallet_counter = 0
+
 class KeyCreateHandler():
 	def __init__(self):
 		self.db = Storage()
 
 	def callback(self, key_hex):
-		print key_hex
 
 		wallet = json.loads(Wallet(key_hex).to_json())
 
-		self.db.add_wallet(wallet)
-
+		print "callback", wallet['wallet_index']
+		if not self.db.add_wallet(wallet):
+			print "Wallet %s already exist" % wallet['wallet_index']
 
 def create_account(name,lastname,email,password):
+	global wallet_counter
 	db = Storage()
 	res = db.find_account(email)
 
@@ -35,28 +38,30 @@ def create_account(name,lastname,email,password):
 	account["password"] = password
 	account["account_index"] = db.get_number_of_accounts()
 	account["created"] = str( datetime.datetime.now() )
-
-	number = db.get_number_of_wallets()
-	account["wallets"] = [number]
+	account["wallets"] = [wallet_counter]
 
 	kh = KeyCreateHandler()
+	request_public_key(wallet_counter, kh.callback)
 
 	db.add_account(account)
 
-	request_public_key(number, kh.callback)
+	wallet_counter += 1
 
 def add_wallet(email):
+	global wallet_counter
 	db = Storage()
-	number = db.get_number_of_wallets()
 
+	print "add_wallet", wallet_counter
 	kh = KeyCreateHandler()
-	request_public_key(number, kh.callback)
+	request_public_key(wallet_counter, kh.callback)
 
 	account = db.find_account(email)
 
-	account['wallets'].append(number)
+	account['wallets'].append(wallet_counter)
 
 	db.update_account(account)
+
+	wallet_counter += 1
 
 def del_wallet(email, wallet_index):
 	db = Storage()
@@ -88,23 +93,36 @@ def deactivate_account(email):
 		account['status'] = 'inactive'
 		db.update_account(account)
 
-def pay_to(from_email, wallet, to_email, amount):
-	pass
+def pay_to(from_email, to_email, amount):
+	from_email = db.find_account(from_email)
+	to_email = db.find_account(to_email)
 
+	wallet_index = from_email["wallets"][0]
+
+	wallet = db.find_wallet(wallet_index)
+
+	print wallet
 
 '''
+db = Storage()
+
 import time
 
 start_service()
 time.sleep(5)
-add_wallet('lekanovic@gmail.com')
-time.sleep(6000000)
 
 create_account('radovan','lekanovic','lekanovic@gmail.com', 'hemlis')
-time.sleep(15)
 
 add_wallet('lekanovic@gmail.com')
-time.sleep(15)
+add_wallet('lekanovic@gmail.com')
+add_wallet('lekanovic@gmail.com')
+add_wallet('lekanovic@gmail.com')
+
+create_account('jimmy','larsson','jlarrsson@gmail.com', 'tutti')
+add_wallet('lekanovic@gmail.com')
+add_wallet('jlarrsson@gmail.com')
+
+
 add_wallet('lekanovic@gmail.com')
 time.sleep(15)
 add_wallet('lekanovic@gmail.com')
@@ -112,10 +130,10 @@ time.sleep(15)
 add_wallet('lekanovic@gmail.com')
 
 del_wallet('lekanovic@gmail.com', 0)
-
+'''
 time.sleep(6000000)
 
-'''
+
 
 
 
