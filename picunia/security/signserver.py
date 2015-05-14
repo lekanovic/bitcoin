@@ -44,7 +44,7 @@ class Consumer(threading.Thread):
             tx_signed_hex = ''
             p = disassemble_package(msg)
 
-            if p.tx in prev_tx:
+            if p.tx in prev_tx and p.rtype != 'KEY':
                 tx_signed_hex = prev_tx[p.tx]
             else:
                 tx_signed_hex = self.sign(p)
