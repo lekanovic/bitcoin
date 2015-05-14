@@ -23,12 +23,12 @@ class Consumer(threading.Thread):
         tx_signed_hex = ''
         if p.rtype == "KEY":
             print "KEY request"
-            tx_signed = get_public_key(p.account_nr)
+            tx_signed = get_public_key(p.wallet_index)
             tx_signed_hex = tx_signed
             print tx_signed_hex
         elif p.rtype == "TXN":
             print "TXN request"
-            tx_signed = sign_tx(p.account_nr, p.key_index, p.tx, netcode=p.netcode)
+            tx_signed = sign_tx(p.wallet_index, p.key_index, p.tx, netcode=p.netcode)
             tx_signed_hex = tx_signed.as_hex(include_unspents=True)
             print tx_signed_hex
         else:
