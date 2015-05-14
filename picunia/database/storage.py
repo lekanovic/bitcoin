@@ -41,6 +41,8 @@ class Storage(object):
 		return True
 
 	def find_wallet(self, wallet):
+		if type(wallet) == int:
+			wallet = str(wallet)
 		res = self.dbw.wallet.find_one({"wallet_index" : wallet})
 		return loads(dumps(res))
 
