@@ -34,19 +34,27 @@ class Storage(object):
 		return True
 
 	def add_wallet(self, wallet):
-		res = self.dba.wallet.find_one({"wallet_index" : wallet})
+		res = self.dbw.wallet.find_one({"wallet_index" : wallet['wallet_index']})
 		if res != None:
 			return False
 		self.dbw.wallet.insert(wallet)
 		return True
 
+	def find_wallet(self, wallet):
+		res = self.dbw.wallet.find_one({"wallet_index" : wallet})
+		return loads(dumps(res))
+
 	def __find_account(self, account):
 		res = self.dba.account.find_one({"email" : account['email']})
 		return res
 
+	def update_wallet(self, wallet):
+		res = self.dbw.wallet.find_one({"wallet_index" : wallet['wallet_index']})
+		self.dbw.wallet.update({'_id': res['_id']}, wallet, upsert=False, multi=False)
+
 	def update_account(self, account):
 		res = self.__find_account(account)
-		self.dba.account.update({'_id': res['_id']}, account,upsert=False, multi=False)
+		self.dba.account.update({'_id': res['_id']}, account, upsert=False, multi=False)
 	'''
 	def update_balance(self, account, new_balance):
 		res = self.__find_account(account)
