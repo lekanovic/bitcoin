@@ -329,7 +329,7 @@ class Wallet():
 		return json.loads(ret)['txid']
 
 	def transaction_cb(self, tx_hex):
-		logger.debug("Transaction size %d signed %s", len(tx_hex), self.email)
+		logger.debug("Transaction size %d signed %s", len(tx_hex), self.wallet_index)
 		db = Storage()
 
 		ret = 0
