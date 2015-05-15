@@ -28,17 +28,17 @@ class Storage(object):
 				Bool: True if account was added, False if account alread exists
 		'''
 		res = self.find_account(account)
-		if res != None:
-			return False
-		self.dba.account.insert(account)
-		return True
+		if res == None:
+			self.dba.account.insert(account)
+			return True
+		return False
 
 	def add_wallet(self, wallet):
 		res = self.dbw.wallet.find_one({"wallet_index" : wallet['wallet_index']})
-		if res != None:
-			return False
-		self.dbw.wallet.insert(wallet)
-		return True
+		if res == None:
+			self.dbw.wallet.insert(wallet)
+			return True
+		return False
 
 	def find_wallet(self, wallet):
 		if type(wallet) == int:
