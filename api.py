@@ -1,26 +1,17 @@
 from picunia.database.storage import Storage
 from picunia.users.wallet import Wallet
 from picunia.security.sign_tx_client import request_public_key, start_service, sign_tx
-from bson.json_util import dumps
+from picunia.handlers.interface import TransactionHandler, KeyCreateHandler
 import json
 import datetime
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class AccountExistException():
 	pass
 
-
-class KeyCreateHandler():
-	def __init__(self):
-		self.db = Storage()
-
-	def callback(self, key_hex):
-
-		wallet = json.loads(Wallet(key_hex).to_json())
-
-		print "callback", wallet['wallet_index']
-		if not self.db.add_wallet(wallet):
-			print "Wallet %s already exist, updating" % wallet['wallet_index']
-			self.db.update_wallet(wallet)
 
 def create_dummy_wallet(wallet_index):
 	dummy_wallet = {}
@@ -134,22 +125,23 @@ def pay_to(send_from, send_to, amount):
 	print from_email_wallet.index
 
 	tx_unsigned = from_email_wallet.pay_to_address(bitcoin_address, amount)
-	d={}
-	d['from'] = send_from
-	d['to_addr'] = bitcoin_address
-	d['to_email'] =  send_to
-	d['amount'] = amount
-	d['confirmations'] = -1
-	d['date'] = str( datetime.datetime.now() )
-	d['block'] = -1
-	d['type'] = "STANDARD"
 
-	from_email_wallet.tx_info = d
+	tx_info={}
+	tx_info['from'] = send_from
+	tx_info['to_addr'] = bitcoin_address
+	tx_info['to_email'] =  send_to
+	tx_info['amount'] = amount
+	tx_info['confirmations'] = -1
+	tx_info['date'] = str( datetime.datetime.now() )
+	tx_info['block'] = -1
+	tx_info['type'] = "STANDARD"
+
+	th = TransactionHandler(tx_info)
 
 	sign_tx(int(from_email_wallet.wallet_index),
 			from_email_wallet.index,
 			tx_unsigned.as_hex(include_unspents=True),
-			cb=from_email_wallet.transaction_cb)
+			cb=th.callback)
 
 '''
 db = Storage()
