@@ -67,7 +67,7 @@ class Wallet():
 	def get_all_pub_keys(self):
 		return self.subkeys
 
-	def get_account_number(self):
+	def get_wallet_index(self):
 		return self.wallet_index
 
 	def get_bitcoin_address(self):
