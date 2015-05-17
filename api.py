@@ -178,9 +178,17 @@ def multisig_transacion(from_email, to_email, escrow_email, amount, msg="undefin
 
 	tx_info={}
 
-	tx_info['from'] = create_user_info(from_email, 0 , sender_wallet.index)
-	tx_info['to_email'] =  create_user_info( to_email, 0 , receiver_wallet.index)
-	tx_info['escrow'] = create_user_info(escrow_email, 0, escrow_wallet.index )
+	tx_info['from'] = create_user_info(from_email,
+										sender_wallet.wallet_index,
+										sender_wallet.index)
+
+	tx_info['to_email'] = create_user_info(to_email,
+											receiver_wallet.wallet_index,
+											receiver_wallet.index)
+
+	tx_info['escrow'] = create_user_info(escrow_email,
+										escrow_wallet.wallet_index,
+										escrow_wallet.index)
 
 	tx_info['amount'] = amount
 	tx_info['confirmations'] = -1
