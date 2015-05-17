@@ -2,6 +2,7 @@ from pycoin.tx.Tx import Tx
 from pycoin.services.insight import InsightService
 from picunia.config.settings import Settings
 from picunia.database.storage import Storage
+from picunia.users.wallet import Wallet
 import urllib2
 import logging
 import json
@@ -40,13 +41,15 @@ class TransactionHandler():
 
 
 class KeyCreateHandler():
-	def __init__(self):
+	def __init__(self, wallet_name='undefined'):
 		self.db = Storage()
+		self.name = wallet_name
 
 	def callback(self, key_hex):
 		wallet = json.loads(Wallet(key_hex).to_json())
+		wallet['wallet_name'] = self.name
 
-		logger.debug("callback", wallet['wallet_index'])
+		logger.debug("callback %s", wallet['wallet_index'])
 
 		if not self.db.add_wallet(wallet):
 			logger.debug("Wallet %s already exist, updating", wallet['wallet_index'])
