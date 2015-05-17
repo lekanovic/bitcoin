@@ -13,18 +13,18 @@ class AccountExistException():
 	pass
 
 
-def create_dummy_wallet(wallet_index):
-	dummy_wallet = {}
-	dummy_wallet['wallet_index'] = str(wallet_index)
-	dummy_wallet['wallet_balance'] = 0
-	dummy_wallet['status'] = 'active'
-	dummy_wallet['public_key'] = ''
-	dummy_wallet['date'] = ''
-	dummy_wallet['wallet_name'] = 'undefined'
-	dummy_wallet['spendable'] = []
-	return dummy_wallet
-
 def create_account(name,lastname,email,password):
+	def create_dummy_wallet(wallet_index):
+		dummy_wallet = {}
+		dummy_wallet['wallet_index'] = str(wallet_index)
+		dummy_wallet['wallet_balance'] = 0
+		dummy_wallet['status'] = 'active'
+		dummy_wallet['public_key'] = ''
+		dummy_wallet['date'] = ''
+		dummy_wallet['wallet_name'] = 'undefined'
+		dummy_wallet['spendable'] = []
+		return dummy_wallet
+
 	db = Storage()
 	res = db.find_account(email)
 	wallet_counter = db.get_number_of_wallets()
