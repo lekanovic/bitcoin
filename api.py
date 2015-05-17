@@ -20,6 +20,7 @@ def create_dummy_wallet(wallet_index):
 	dummy_wallet['status'] = 'active'
 	dummy_wallet['public_key'] = ''
 	dummy_wallet['date'] = ''
+	dummy_wallet['wallet_name'] = 'undefined'
 	dummy_wallet['spendable'] = []
 	return dummy_wallet
 
@@ -97,7 +98,7 @@ def deactivate_account(email):
 		account['status'] = 'inactive'
 		db.update_account(account)
 
-def pay_to(send_from, send_to, amount):
+def pay_to_address(send_from, send_to, amount, msg="undefined"):
 	db = Storage()
 
 	from_email = db.find_account(send_from)
@@ -135,11 +136,66 @@ def pay_to(send_from, send_to, amount):
 	tx_info['date'] = str( datetime.datetime.now() )
 	tx_info['block'] = -1
 	tx_info['type'] = "STANDARD"
+	tx_info['message'] = msg
 
 	th = TransactionHandler(tx_info)
 
 	sign_tx(int(from_email_wallet.wallet_index),
 			from_email_wallet.index,
+			tx_unsigned.as_hex(include_unspents=True),
+			cb=th.callback)
+
+def multisig_transacion(from_email, to_email, escrow_email, amount, msg="undefined"):
+	def create_user_info(email, wallet_index, key_index):
+		user = {}
+		user['email'] = email
+		user['wallet_index'] = wallet_index
+		user['key_index'] = key_index
+		user['signed'] = 'no'
+		return user
+
+	db = Storage()
+	tx_unsigned = 0
+
+	sender = db.find_account(from_email)
+	receiver = db.find_account(to_email)
+	escrow = db.find_account(escrow_email)
+
+	sender_wallet = db.find_wallet(sender["wallets"][0])
+	receiver_wallet = db.find_wallet(receiver["wallets"][0])
+	escrow_wallet = db.find_wallet(escrow["wallets"][0])
+
+	sender_wallet = Wallet(sender_wallet['public_key'])
+	receiver_wallet = Wallet(receiver_wallet['public_key'])
+	escrow_wallet = Wallet(escrow_wallet['public_key'])
+
+	keys = []
+	keys.append(sender_wallet.get_key())
+	keys.append(receiver_wallet.get_key())
+	keys.append(escrow_wallet.get_key())
+
+	tx_multi_unsigned, multi_address = sender_wallet.multisig_2_of_3(keys)
+
+	tx_info={}
+
+	tx_info['from'] = create_user_info(from_email, 0 , sender_wallet.index)
+	tx_info['to_email'] =  create_user_info( to_email, 0 , receiver_wallet.index)
+	tx_info['escrow'] = create_user_info(escrow_email, 0, escrow_wallet.index )
+
+	tx_info['amount'] = amount
+	tx_info['confirmations'] = -1
+	tx_info['date'] = str( datetime.datetime.now() )
+	tx_info['block'] = -1
+	tx_info['multisig_address'] = multi_address
+	tx_info['message'] = msg
+	tx_info['type'] = "MULTISIG"
+
+	tx_unsigned = sender_wallet.pay_to_address(multi_address,amount)
+
+	th = TransactionHandler(tx_info)
+
+	sign_tx(int(sender_wallet.wallet_index),
+			sender_wallet.index,
 			tx_unsigned.as_hex(include_unspents=True),
 			cb=th.callback)
 
@@ -150,28 +206,33 @@ import time
 
 start_service()
 time.sleep(5)
-pay_to('lekanovic@gmail.com', 'jlarrsson@gmail.com', 10000)
+
+multisig_transacion('lekanovic@gmail.com',
+					'sveningvarsson@gmail.com',
+					'jlarrsson@gmail.com', 10000)
+
+pay_to_address('lekanovic@gmail.com', 
+				'jlarrsson@gmail.com', 10000)
 
 
 create_account('radovan','lekanovic','lekanovic@gmail.com', 'hemlis')
 
 add_wallet('lekanovic@gmail.com')
-
-
-
 add_wallet('lekanovic@gmail.com')
 add_wallet('lekanovic@gmail.com')
-add_wallet('lekanovic@gmail.com')
+create_account('Sven','Ingvarss','sveningvarsson@gmail.com', 'minmamma')
 
+add_wallet('lekanovic@gmail.com')
 create_account('jimmy','larsson','jlarrsson@gmail.com', 'tutti')
+
 add_wallet('lekanovic@gmail.com')
 add_wallet('jlarrsson@gmail.com')
 
 
 #del_wallet('lekanovic@gmail.com', 0)
-'''
-time.sleep(6000000)
 
+time.sleep(6000000)
+'''
 
 
 
