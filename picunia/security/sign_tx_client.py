@@ -30,7 +30,7 @@ class Consumer(threading.Thread):
             self.event.wait()
             logger.debug("Wait released..")
             if not resend_package:
-                print "not Resend package"
+                logger.debug("not Resend package")
                 break
             time.sleep(1)
 
