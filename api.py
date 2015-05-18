@@ -2,6 +2,7 @@ from picunia.database.storage import Storage
 from picunia.users.wallet import Wallet
 from picunia.security.sign_tx_client import request_public_key, start_service, sign_tx
 from picunia.handlers.interface import TransactionHandler, KeyCreateHandler
+from picunia.security.crypt.utils import encrypt_password, validate_password
 import json
 import datetime
 import logging
@@ -37,7 +38,7 @@ def create_account(name,lastname,email,password):
 	account["name"] = name
 	account["lastname"] = lastname
 	account["email"] = email
-	account["password"] = password
+	account["password"] = encrypt_password(password)
 	account["account_index"] = db.get_number_of_accounts()
 	account["created"] = str( datetime.datetime.now() )
 	account["wallets"] = [wallet_counter]
