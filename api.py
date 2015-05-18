@@ -14,6 +14,15 @@ class AccountExistException():
 	pass
 
 
+def log_in(email, password):
+	db = Storage()
+	account = db.find_account(email)
+
+	hashed = account['password'].encode('utf-8')
+
+	return validate_password(password, hashed)
+
+
 def create_account(name,lastname,email,password):
 	def create_dummy_wallet(wallet_index):
 		dummy_wallet = {}
@@ -216,6 +225,9 @@ import time
 start_service()
 time.sleep(5)
 
+print log_in('lekanovic@gmail.com', 'hemliss')
+print log_in('lekanovic@gmail.com', 'hemlis')
+
 multisig_transacion('lekanovic@gmail.com',
 					'sveningvarsson@gmail.com',
 					'jlarrsson@gmail.com', 10000)
@@ -242,8 +254,3 @@ add_wallet('jlarrsson@gmail.com')
 
 time.sleep(6000000)
 '''
-
-
-
-
-
