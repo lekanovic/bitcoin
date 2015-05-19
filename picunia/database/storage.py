@@ -90,10 +90,9 @@ class Storage(object):
 
 
 	def find_account_index(self, account):
-		if type(account) == str:
-			res = self.dba.account.find_one({"account_index" : account})
-		elif type(account) == dict:
-			res = self.dba.account.find_one({"account_index" : account['account_index']})
+		if type(account) != int:
+			raise ValueError("Invalid type expects int")
+		res = self.dba.account.find_one({"account_index" : account})
 		return dumps(res, indent=4)
 
 	def find_bitcoin_address(self, bitcoin_address):
@@ -177,6 +176,7 @@ doc2 = {
 		"public_key": "tpubDCVcrTzunZwuc67hSQHmjHN8efpCVw4aZDUqvztyryj8QDpsvjxipein85QKt3ZuWXGapnuYVBEUGyvAQMJBNpruqxqStQ5RdrLhRCzNtuc",
 		"date":  str( datetime.datetime.now() )
 		}
+
 
 '''
 db = Storage()
