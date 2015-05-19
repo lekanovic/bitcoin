@@ -93,7 +93,7 @@ class Storage(object):
 		if type(account) != int:
 			raise ValueError("Invalid type expects int")
 		res = self.dba.account.find_one({"account_index" : account})
-		return dumps(res, indent=4)
+		return loads(dumps(res))
 
 	def find_bitcoin_address(self, bitcoin_address):
 		res = self.dba.account.find_one({"spendable.public_address" : bitcoin_address })
