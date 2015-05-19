@@ -18,7 +18,7 @@ def log_in(email, password):
 	db = Storage()
 	account = db.find_account(email)
 
-	hashed = account['password'].encode('utf-8')
+	hashed = account['password']
 
 	return validate_password(password, hashed)
 
@@ -47,7 +47,7 @@ def create_account(name,lastname,email,password):
 	account["name"] = name
 	account["lastname"] = lastname
 	account["email"] = email
-	account["password"] = encrypt_password(password)
+	account["password"] = encrypt_password(password.encode('utf-8'))
 	account["account_index"] = db.get_number_of_accounts()
 	account["created"] = str( datetime.datetime.now() )
 	account["wallets"] = [wallet_counter]
