@@ -63,21 +63,23 @@ def sign_tx(wallet_index, key_index, tx_unsigned, netcode="BTC"):
 	wifs_db = shelve.open(Settings.WIFS_DB, writeback=True)
 
 	tx_unsigned = Tx.tx_from_hex(tx_unsigned)
-	key_index = int(key_index)
+
 	seed, words = BIP39_mnemonics()
 
 	master = BIP32Node.from_master_secret(seed, Settings.NETCODE)
 
-	logger.debug("%d %d %s %s", wallet_index, key_index, Settings.NETCODE, tx_unsigned)
+	logger.debug("%d %s %s %s", wallet_index, str(key_index), Settings.NETCODE, tx_unsigned)
 
 	key_path = Settings.KEY_PATHS
 
-	k = 0
+
 	wifs = []
 	start = time.time()
 
-	while k < key_index:
+	for k in key_index:
+
 		p1 = key_path + "%sH/0/%s" % (wallet_index, k)
+
 		try:
 			existing = wifs_db[p1]
 			logger.debug("From cache: %s", existing)
@@ -109,7 +111,9 @@ def sign_tx(wallet_index, key_index, tx_unsigned, netcode="BTC"):
 	wifs_db.close()
 
 	return tx_signed
+
 '''
-tx = '01000000018e0518c9fa9d6c54e5692c7b6c8b913bd55d790fac57f5265af07deec94410a90100000000ffffffff0265480000000000001976a9145e27c1c859310d5f5b75edbd2c93067e3b80b82788aca5170200000000001976a914be0a1a260aa3784747055567f0ac9d304c33d61888ac000000001a870200000000001976a914be0a1a260aa3784747055567f0ac9d304c33d61888ac'
-print Signer.sign_tx(2392, 8, tx, netcode="XTN")
+print get_public_key(2)
+tx = '01000000050468194b68edb348adcf23444c89cd591abf4a5f85d8e36655539fec42971c110000000000ffffffff90cc080d0f3c1df41d67e62cc9896b54b2395bc05eaf05fe19a626d966d3398e0000000000ffffffffbe4cb589cc20861d4881a7d5daf3de1780909d261bbf1182adc72be4bc97e9450000000000ffffffff831f9861f5e40e4a5371d4b069ff71818fa9e2d532687edadb1d72a8ab8418160100000000ffffffff4590040629ffbdef75bf610452dbca4edeb7e4fead6c97a009dc28c57cea76930100000000ffffffff0288130000000000001976a914ca03162cb9bdeada6087bd7fb605496817299c4288acf5010000000000001976a91448a9c88c79252ecb8efb187b9175a9abaf03cc4f88ac0000000022270000000000001976a914be46bcf8e6ee88c99d17e037893bd48b00fa79fe88ac1e0a0000000000001976a9149e7af516dee4b9b97c59e7ca84acf9129eeb9d1f88ac32050000000000001976a914ebde8fb3410b3b8992ba445a33caed5d5a34e00a88ac10030000000000001976a91448a9c88c79252ecb8efb187b9175a9abaf03cc4f88ac0b030000000000001976a91448a9c88c79252ecb8efb187b9175a9abaf03cc4f88ac'
+print sign_tx(2, [29, 26, 24, 23], tx, netcode="XTN")
 '''

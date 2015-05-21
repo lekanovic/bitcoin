@@ -135,7 +135,7 @@ def pay_to_address(send_from, send_to, amount, msg="undefined"):
 	print from_email_wallet.wallet_index
 	print from_email_wallet.index
 
-	tx_unsigned = from_email_wallet.pay_to_address(bitcoin_address, amount)
+	tx_unsigned, keylist = from_email_wallet.pay_to_address(bitcoin_address, amount)
 
 	tx_info={}
 	tx_info['from'] = send_from
@@ -151,7 +151,7 @@ def pay_to_address(send_from, send_to, amount, msg="undefined"):
 	th = TransactionHandler(tx_info)
 
 	sign_tx(int(from_email_wallet.wallet_index),
-			from_email_wallet.index,
+			keylist,
 			tx_unsigned.as_hex(include_unspents=True),
 			cb=th.callback)
 

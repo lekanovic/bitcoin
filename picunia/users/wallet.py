@@ -167,7 +167,7 @@ class Wallet():
 
 	def __get_all_keys(self):
 		# Get all of the key's in wallet. But don't forget the change key
-		all_keys = [self.key_change.address()] + self.subkeys
+		all_keys = self.subkeys + [self.key_change.address()]
 		return all_keys
 
 	def __greedy(self, spendable, amount):
@@ -215,6 +215,15 @@ class Wallet():
 
 		txs_in = [spendable.tx_in() for spendable in to_spend]
 
+		key_indexes = []
+		keylist = self.__get_all_keys()
+
+		for spendable in to_spend:
+			btc_addr = spendable.bitcoin_address(netcode=Settings.NETCODE)
+			logger.debug( "%s %d", btc_addr, keylist.index(btc_addr) )
+
+			key_indexes.append(keylist.index(btc_addr))
+
 		txs_out = []
 		# Send bitcoin to the addess 'to_addr'
 		script = standard_tx_out_script(to_addr)
@@ -232,19 +241,19 @@ class Wallet():
 		logger.debug(t)
 		logger.debug("Transaction size %d unsigned", len(t))
 
-		return tx
+		return tx, key_indexes
 
 	# http://bitcoin.stackexchange.com/questions/1077/what-is-the-coin-selection-algorithm
 	def pay_to_address(self, to_addr, amount, fee=10000):
-		tx = self.__pay_with_fee(to_addr, amount, fee)
+		tx, key_indexes = self.__pay_with_fee(to_addr, amount, fee)
 
 		recommended_fee = tx_fee.recommended_fee_for_tx(tx)
 
 		if recommended_fee != fee:
 			logger.debug("Recommended fee %d but using %d", recommended_fee, fee)
-			tx = self.__pay_with_fee(to_addr, amount, recommended_fee)
+			tx, key_indexes = self.__pay_with_fee(to_addr, amount, recommended_fee)
 
-		return tx
+		return tx, key_indexes
 
 	def proof_of_existens(self, message, fee=10000):
 		amount = 10000
@@ -310,3 +319,47 @@ class Wallet():
 		logger.debug(tx1.as_hex(include_unspents=True))
 
 		return tx1, address
+
+'''
+pub = 'tpubDCVcrTzunZwudiYHyQ21fvpUpUTPh1vUm9Z633hGwAzacBYoNpjv4NJpwV3A8avhWpnyTpWhKypLwaEEfta5SvnhEraGtobeUyEaWsbBKSy'
+w = Wallet(pub)
+
+print "wallet index %s" % w.wallet_index
+print "key index %d" % w.index
+print "wallet ballance %d" % w.wallet_balance()
+
+
+tx, key_indexes = w.pay_to_address('myw6VGNg5uB52p1RWYc6BTbZzwrGo5tEgC',5000)
+
+
+for k in key_indexes:
+	print k
+
+print w.get_key(27).address()
+print w.get_key(23).address()
+print w.get_key(24).address()
+print w.get_key(3).address()
+print w.get_key(4).address()
+print w.get_key(26).address()
+
+print ""
+
+for i in range(0,120):
+	addr = w.get_key(i).address()
+	#print addr
+	if addr in 'mxs3RUaGL6wf7G7Lecm9rZarxBRJnpypd2':
+		print "Hittade %d" % i
+		print addr
+
+	if addr in 'n327hy1EjZ1cbgt6Zp3kJM1RYbEc5JfEoD':
+		print "Hittade %d" % i
+		print addr
+
+	if addr in 'n1P8PbhkhWkXTj1QvTjxaAMNtaHQV6Qg53':
+		print "Hittade %d" % i
+		print addr
+
+	if addr in 'miU7fUgT97h63WaPX9LNpQs23QB1Dhd6mg':
+		print "Hittade %d" % i
+		print addr
+'''

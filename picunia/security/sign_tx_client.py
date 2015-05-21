@@ -146,8 +146,8 @@ def start_service():
 def sign_tx(wallet_index, key_index, tx, cb):
     if not isinstance(wallet_index, int):
         raise TypeError("Expected int, got %s" % (type(wallet_index),))
-    if not isinstance(key_index, int):
-        raise TypeError("Expected int, got %s" % (type(key_index),))
+    if not isinstance(key_index, list):
+        raise TypeError("Expected list, got %s" % (type(key_index),))
     if not isinstance(tx, unicode):
         raise TypeError("Expected int, got %s" % (type(tx),))
 
@@ -164,7 +164,7 @@ def request_public_key(wallet_index, cb):
 
     # Since we are requesting a public key we can leave tx empty.
     # And key_index is zero since this is the first key.
-    package = assemble_package(wallet_index, 0, '', rtype="KEY")
+    package = assemble_package(wallet_index, [0], '', rtype="KEY")
 
     send_queue.put(package)
 
