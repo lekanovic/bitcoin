@@ -29,10 +29,11 @@ class InsufficientFunds(Exception):
 
 class Wallet():
 
-	def __init__(self, bip32node):
+	def __init__(self, bip32node, name="undefined"):
 
 		bip32node = BIP32Node.from_text(bip32node)
 		self.subkeys = []
+		self.wallet_name = name
 		self.index = 0
 		self.network = Settings.NETWORK
 		self.netcode = Settings.NETCODE
@@ -49,7 +50,7 @@ class Wallet():
 		cls.status = json['status']
 		cls.account_created = json['date']
 
-		return cls(BIP32Node.from_text(json['public_key']))
+		return cls(json['public_key'])
 
 	def get_key_info(self, bip32node):
 		child_number = bip32node.child_index()
@@ -139,7 +140,10 @@ class Wallet():
 
 	def wallet_info(self):
 		balance = self.wallet_balance()
-		logger.debug("balance: Satoshi [%d] = BTC [%f]", balance, satoshi_to_btc(balance))
+		logger.debug("Wallet name: [%s] balance: Satoshi/BTC %d/%f",
+					self.wallet_name,
+					balance,
+					satoshi_to_btc(balance))
 		for k in self.subkeys:
 			print "%s" % (k)
 
@@ -161,6 +165,7 @@ class Wallet():
 
 		return json.dumps({"wallet_index" : self.wallet_index,
 						   "wallet_balance" : balance,
+						   "wallet_name": self.wallet_name,
 						   "status": "active",
 						   "public_key": self.public_key,
 						   "date": self.wallet_created,
