@@ -91,8 +91,8 @@ class Wallet():
 
 	def __check_gap(self, index):
 		"""
-		Search for key that has previously been used in transactions. But
-		the search is only limited by the constant GAP_LIMIT. If there is
+		Search for key that has previously NOT been used in transactions.
+		The search is only limited by the constant GAP_LIMIT. If there is
 		keys beyond that that has been used in transaction they will not be
 		found.
 
@@ -107,6 +107,7 @@ class Wallet():
 				  int the gap. False otherwise
 		"""
 		tmp = []
+
 		for i in range(index,index + self.GAP_LIMIT):
 			key = self.__next_address(i)
 			tmp.append(key)
@@ -122,6 +123,7 @@ class Wallet():
 		while True:
 			key = self.__next_address(self.index)
 			self.subkeys.append(key)
+
 			if not self.insight.is_address_used(key):
 				if not self.__check_gap(self.index):
 					self.index += 1
@@ -137,7 +139,7 @@ class Wallet():
 
 	def wallet_info(self):
 		balance = self.wallet_balance()
-		logger.debug("Account owner %s balance %d Satoshi = %f BTC", self.name, balance, satoshi_to_btc(balance))
+		logger.debug("balance: Satoshi [%d] = BTC [%f]", balance, satoshi_to_btc(balance))
 		for k in self.subkeys:
 			print "%s" % (k)
 
@@ -192,6 +194,27 @@ class Wallet():
 	def has_unconfirmed_balance(self):
 		return self.insight.has_unconfirmed_balance(self.__get_all_keys())
 
+	def __get_address_index(self, bitcoin_address):
+		i = 0
+		while i <= self.index:
+			addr = self.__next_address(i)
+			if addr == bitcoin_address:
+				return i
+			i += 1
+		return None
+
+	def __get_key_indexes(self, to_spend):
+		key_indexes = []
+		for spendable in to_spend:
+			btc_addr = spendable.bitcoin_address(netcode=Settings.NETCODE)
+			idx = self.__get_address_index(btc_addr)
+			if idx == None:# If we don't find address then this means its a change address
+				continue
+			key_indexes.append(idx)
+			logger.debug( "%s %d", btc_addr, idx)
+
+		return key_indexes
+
 	def __pay_with_fee(self, to_addr, amount, fee=10000):
 		logger.debug("Pay %d to %s", amount, to_addr)
 		spendables = self.insight.spendables_for_addresses(self.__get_all_keys())
@@ -215,14 +238,7 @@ class Wallet():
 
 		txs_in = [spendable.tx_in() for spendable in to_spend]
 
-		key_indexes = []
-		keylist = self.__get_all_keys()
-
-		for spendable in to_spend:
-			btc_addr = spendable.bitcoin_address(netcode=Settings.NETCODE)
-			logger.debug( "%s %d", btc_addr, keylist.index(btc_addr) )
-
-			key_indexes.append(keylist.index(btc_addr))
+		key_indexes = self.__get_key_indexes(to_spend)
 
 		txs_out = []
 		# Send bitcoin to the addess 'to_addr'
@@ -320,6 +336,7 @@ class Wallet():
 
 		return tx1, address
 
+
 '''
 pub = 'tpubDCVcrTzunZwudiYHyQ21fvpUpUTPh1vUm9Z633hGwAzacBYoNpjv4NJpwV3A8avhWpnyTpWhKypLwaEEfta5SvnhEraGtobeUyEaWsbBKSy'
 w = Wallet(pub)
@@ -327,7 +344,7 @@ w = Wallet(pub)
 print "wallet index %s" % w.wallet_index
 print "key index %d" % w.index
 print "wallet ballance %d" % w.wallet_balance()
-
+print w.wallet_info()
 
 tx, key_indexes = w.pay_to_address('myw6VGNg5uB52p1RWYc6BTbZzwrGo5tEgC',5000)
 
