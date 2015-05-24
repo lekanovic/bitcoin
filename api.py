@@ -1,5 +1,5 @@
 from picunia.database.storage import Storage
-from picunia.users.wallet import Wallet
+from picunia.users.wallet import Wallet, InsufficientFunds, UnconfirmedAddress
 from picunia.security.sign_tx_client import request_public_key, start_service, sign_tx
 from picunia.handlers.interface import TransactionHandler, KeyCreateHandler
 from picunia.security.crypt.utils import encrypt_password, validate_password
@@ -135,7 +135,14 @@ def pay_to_address(send_from, send_to, amount, msg="undefined"):
 	print from_email_wallet.wallet_index
 	print from_email_wallet.index
 
-	tx_unsigned, keylist = from_email_wallet.pay_to_address(bitcoin_address, amount)
+	try:
+		tx_unsigned, keylist = from_email_wallet.pay_to_address(bitcoin_address, amount)
+	except InsufficientFunds as e:
+		print "TRANSACTION FAILED! %s" % e.message
+		return
+	except UnconfirmedAddress as e:
+		print "TRANSACTION FAILED! %s" % e.message
+		return
 
 	tx_info={}
 	tx_info['from'] = send_from
