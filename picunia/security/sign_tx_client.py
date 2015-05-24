@@ -80,7 +80,7 @@ class Receiver:
                         packet = ''
                     elif line.startswith('### NOCARRIER '):
                         in_packet = False
-                        if len(packet) < 30:
+                        if len(packet) < 100:
                             continue
                         b = bytearray()
                         b.extend(packet)
