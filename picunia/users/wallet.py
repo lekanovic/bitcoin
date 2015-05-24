@@ -250,9 +250,10 @@ class Wallet():
 		script = standard_tx_out_script(to_addr)
 		txs_out.append(TxOut(amount, script))
 
-		# Return the change back to our wallet
-		script = standard_tx_out_script(self.key_change.address())
-		txs_out.append(TxOut(change, script))
+		# Return the change back to our wallet if there is any change.
+		if change > 0:
+			script = standard_tx_out_script(self.key_change.address())
+			txs_out.append(TxOut(change, script))
 
 		tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out, lock_time=0)
 		tx.set_unspents(to_spend)
