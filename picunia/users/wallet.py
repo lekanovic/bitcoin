@@ -20,9 +20,13 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+class UnconfirmedAddress(Exception):
+	def __init__(self, m):
+		self.message = m
 
 class InsufficientFunds(Exception):
-    pass
+    def __init__(self, m):
+		self.message = m
 
 # Test BIP32 wallet
 # https://dcpos.github.io/bip39/
@@ -199,6 +203,9 @@ class Wallet():
 	def has_unconfirmed_balance(self):
 		return self.insight.has_unconfirmed_balance(self.__get_all_keys())
 
+	def has_unconfirmed_address(self, bitcoin_address):
+		return self.insight.has_unconfirmed_balance([bitcoin_address])
+
 	def __get_address_index(self, bitcoin_address):
 		i = 0
 		while i <= self.index:
@@ -212,6 +219,10 @@ class Wallet():
 		key_indexes = []
 		for spendable in to_spend:
 			btc_addr = spendable.bitcoin_address(netcode=Settings.NETCODE)
+
+			if self.has_unconfirmed_address(btc_addr):
+				raise UnconfirmedAddress("Unconfirmed address %s" % btc_addr)
+
 			idx = self.__get_address_index(btc_addr)
 			if idx == None:# If we don't find address then this means its a change address
 				continue
