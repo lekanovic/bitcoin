@@ -169,6 +169,7 @@ def main(argv):
         number = int(args.simulate)
         for i in range(0, number):
             one_round()
+            time.sleep(5)
 
     time.sleep(1000000)
 
