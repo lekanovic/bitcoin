@@ -1,4 +1,4 @@
-from construct import Struct, UBInt32, String, CString, Container, GreedyRange
+from construct import Struct, UBInt32, String, CString, Container, OptionalGreedyRange
 from picunia.config.settings import Settings
 
 #http://construct.readthedocs.org/en/latest/basics.html
@@ -13,7 +13,7 @@ package = Struct("package",
             UBInt32("wallet_index"),
             String("netcode", 3),
             CString("tx"),
-            GreedyRange(UBInt32("key_index")),
+            OptionalGreedyRange(UBInt32("key_index")),
             )
 
 def assemble_package(wallet_index, key_index, tx_unsigned, rtype="TXN"):
