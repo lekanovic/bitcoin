@@ -96,9 +96,14 @@ class Storage(object):
 		return loads(dumps(res))
 
 	def find_bitcoin_address(self, bitcoin_address):
-		res = self.dba.account.find_one({"spendable.public_address" : bitcoin_address })
+		res = self.dbw.wallet.find_one({"spendable.public_address" : bitcoin_address })
+		if not res:
+			return None, None
+		tmp = int(res["wallet_index"])
 
-		return dumps(res, indent=4)
+		account = self.find_account_index(tmp)
+
+		return loads(dumps(account)), loads(dumps(res))
 
 	def get_all_accounts(self):
 		return [dumps(account, indent=4) for account in self.dba.account.find()]
@@ -114,6 +119,8 @@ class Storage(object):
 			self.dba.account.drop()
 			self.dbt.transaction.drop()
 			self.dbw.wallet.drop()
+			self.db_blk.blockDB.drop()
+
 		elif which == "account":
 			self.dba.account.drop()
 		elif which == "transaction":
@@ -126,11 +133,19 @@ class Storage(object):
 		self.dbt.transaction.insert(transaction)
 
 	def find_last_block(self):
+		if self.db_blk.blockDB.count() == 0:
+			return None
+
 		res = self.db_blk.blockDB.find().sort("block-height", -1).limit(1)
-		return dumps(res, indent=4)
+
+		return loads(dumps(res))[0]["block-height"]
 
 	def add_block(self, block):
-		self.db_blk.blockDB.insert(block)
+		res = self.db_blk.blockDB.find_one({"block-height" : block["block-height"]})
+		if res == None:
+			self.db_blk.blockDB.insert(block)
+			return True
+		return False
 
 	def find_transaction(self, transaction):
 		res = self.dbt.transaction.find_one({"tx_id" : transaction['tx_id']})
@@ -177,9 +192,24 @@ doc2 = {
 		"date":  str( datetime.datetime.now() )
 		}
 
-
 '''
 db = Storage()
+
+blk = {}
+blk['block-height'] = 1001
+db.add_block(blk)
+
+blk['block-height'] = 1002
+db.add_block(blk)
+
+last_height = db.find_last_block()
+print last_height
+if not last_height:
+	print "inget"
+
+a, w = db.find_bitcoin_address("mn9ALd5MGqLbWnswpwJy6MtkpiAKvQEC3n")
+print a['email']
+print w['wallet_index']
 
 account = {}
 account["status"] = "active"
