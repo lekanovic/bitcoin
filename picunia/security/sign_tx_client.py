@@ -108,12 +108,13 @@ class Receiver:
                             self.event.set()
                             continue
 
-                        resend_package = False
-                        self.event.set()
                         # Callback function with the signed transaction
                         cb = self.func_cb.pop(0)
                         if cb is not None:
                             cb(p.tx)
+
+                        resend_package = False
+                        self.event.set()
 
     def __init__(self, event, compress=True, **kwargs):
         self.p = subprocess.Popen(['minimodem', '-r', '-8', '-A',
