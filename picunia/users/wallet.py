@@ -152,6 +152,9 @@ class Wallet():
 			print "%s" % (k)
 
 	def to_json(self):
+		return json.dumps(self.to_dict())
+
+	def to_dict(self):
 		balance = self.wallet_balance()
 
 		key_amount=[]
@@ -167,14 +170,16 @@ class Wallet():
 			d['amount'] = amount
 			key_amount.append(d)
 
-		return json.dumps({"wallet_index" : self.wallet_index,
-						   "wallet_balance" : balance,
-						   "wallet_name": self.wallet_name,
-						   "status": "active",
-						   "public_key": self.public_key,
-						   "date": self.wallet_created,
-						   "spendable" : key_amount}, indent=4)
+		wallet = {}
+		wallet["wallet_index"] = self.wallet_index
+		wallet["wallet_balance"] = balance
+		wallet["wallet_name"] = self.wallet_name
+		wallet["status"] = "active"
+		wallet["public_key"] = self.public_key
+		wallet["date"] = self.wallet_created
+		wallet["spendable"] = key_amount
 
+		return wallet
 
 	def __get_all_keys(self):
 		# Get all of the key's in wallet. But don't forget the change key
