@@ -91,7 +91,7 @@ class Receiver:
                             if self.compress:
                                 packet = zlib.decompress(base64.b64decode(packet))
                         except:
-                            logger.debug("Package broken, wait for resend..%s", b)
+                            logger.debug("Package broken, wait for resend..")
                             resend_package = True
                             self.event.set()
                             continue
