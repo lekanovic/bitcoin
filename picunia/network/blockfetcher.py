@@ -1,5 +1,5 @@
 from picunia.database.storage import Storage
-from picunia.users.account import Account
+from picunia.users.wallet import Wallet
 from pycoin.services.insight import InsightService
 from pycoin.serialize import b2h_rev
 from pycoin.tx import Tx, TxIn, TxOut, tx_utils
@@ -30,24 +30,27 @@ class BlockchainFetcher():
 		self.insight = InsightService(Settings.INSIGHT_ADDRESS)
 		self.db = Storage()
 
+	def __update_balance(self, w, account):
+		if w.wallet_balance() != account['wallet_balance']:
+			logger.debug("Old balance %d New balance %d", account['wallet_balance'], w.wallet_balance())
+			self.db.update_wallet(w.to_dict())
+
 	def check_inputs_outputs(self, tx):
 		for t1 in tx.txs_in:
-			account_json = json.loads(self.db.find_bitcoin_address(t1.bitcoin_address(Settings.NETCODE)))
-			if account_json:
-				logger.debug("Sending bitcoins %s", account_json['email'])
-				a = Account.from_json(account_json)
-				if a.wallet_balance() != account_json['wallet-balance']:
-					logger.debug("Old balance %d New balance %d", account_json['wallet-balance'], a.wallet_balance())
-					self.db.update_account( json.loads(a.to_json()) )
+			account, wallet = self.db.find_bitcoin_address(t1.bitcoin_address(Settings.NETCODE))
+			if account and wallet['public_key']:
+				logger.debug("Sending bitcoins %s", account['email'])
+				key = wallet['public_key']
+				w = Wallet(key)
+				self.__update_balance(w, wallet)
 
 		for t2 in tx.txs_out:
-			account_json = json.loads(self.db.find_bitcoin_address(t2.bitcoin_address(Settings.NETCODE)))
-			if account_json:
-				logger.debug("Receiving bitcoins %s", account_json['email'])
-				a = Account.from_json(account_json)
-				if a.wallet_balance() != account_json['wallet-balance']:
-					logger.debug("Old balance %d New balance %d", account_json['wallet-balance'], a.wallet_balance())
-					self.db.update_account( json.loads(a.to_json()) )
+			account, wallet = self.db.find_bitcoin_address(t2.bitcoin_address(Settings.NETCODE))
+			if account and wallet['public_key']:
+				logger.debug("Receiving bitcoins %s", account['email'])
+				key = wallet['public_key']
+				w = Wallet(key)
+				self.__update_balance(w, wallet)
 
 	def update_transactions(self, block_height):
 		for unconf_tx in self.db.get_all_transactions():
@@ -71,7 +74,8 @@ class BlockchainFetcher():
 		'''
 		block_hashes = []
 		current_height = 0
-		last_height = json.loads(self.db.find_last_block())[0]['block-height']
+
+		last_height = self.db.find_last_block()
 
 		if not last_height:
 			return
@@ -93,6 +97,7 @@ class BlockchainFetcher():
 
 			for t1 in tx_hashes:
 				hex_tx = b2h_rev(t1)
+				print hex_tx
 				tx = self.insight.get_tx(t1)
 				self.check_inputs_outputs(tx)
 			self.update_transactions(blockheader.height)
@@ -120,23 +125,30 @@ class BlockchainFetcher():
 
 def sync_all_accounts(threadName, delay):
 	db = Storage()
-	n = db.get_number_of_accounts()-1
+	n = db.get_number_of_wallets()
 
 	start_time = time.time()
-	logger.info("Syncing all accounts..")
+	logger.info("Syncing all wallets..")
 	for index in range(0, n):
-		account_json = json.loads(db.find_account_index(str(index)))
-		a = Account.from_json(account_json)
-		if a.wallet_balance() != account_json['wallet-balance']:
-			logger.info("Old balance %d New balance %d", account_json['wallet-balance'], a.wallet_balance())
-			db.update_account( json.loads(a.to_json()) )
+		w = db.find_wallet(index)
+
+		key = w['public_key']
+		if not key: # Make sure this is not a dummy wallet
+			continue
+
+		wallet = Wallet(key)
+
+		if wallet.wallet_balance() != w['wallet_balance']:
+			logger.info("Old balance %d New balance %d", w['wallet_balance'], wallet.wallet_balance())
+			db.update_wallet(wallet.to_dict())
 	delta = (time.time() - start_time)
-	logger.info("DONE! syncing all accounts it took %s ", str(datetime.timedelta(seconds=delta)))
+	logger.info("DONE! syncing all wallets it took %s ", str(datetime.timedelta(seconds=delta)))
 
 try:
-	thread.start_new_thread(sync_all_accounts, ("Sync-account-thread", 2))
+	thread.start_new_thread(sync_all_accounts, ("Sync-wallet-thread", 2))
 except:
 	logger.info("Error: unable to start thread")
+
 
 app = BlockchainFetcher()
 app.catch_up()
@@ -152,7 +164,7 @@ account_json = json.loads(db.find_bitcoin_address("mxnEPXCb6NbPGtg3iFdjUHnuQag9R
 
 a = Account.from_json(account_json)
 print a.wallet_balance()
-print account_json['wallet-balance']
+print account_json['wallet_balance']
 print account_json['email']
 db.update_balance(account_json, a.wallet_balance())
 
