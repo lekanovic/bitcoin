@@ -46,7 +46,8 @@ class KeyCreateHandler():
 		self.name = wallet_name
 
 	def callback(self, key_hex):
-		wallet = json.loads(Wallet(key_hex).to_json())
+		wallet = Wallet(key_hex).to_dict()
+
 		wallet['wallet_name'] = self.name
 
 		logger.debug("callback %s", wallet['wallet_index'])
