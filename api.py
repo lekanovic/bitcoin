@@ -215,12 +215,19 @@ def multisig_transacion(from_email, to_email, escrow_email, amount, msg="undefin
 	tx_info['message'] = msg
 	tx_info['type'] = "MULTISIG"
 
-	tx_unsigned = sender_wallet.pay_to_address(multi_address,amount)
+	try:
+		tx_unsigned, keylist = sender_wallet.pay_to_address(multi_address,amount)
+	except InsufficientFunds as e:
+		print "TRANSACTION FAILED! %s" % e.message
+		return
+	except UnconfirmedAddress as e:
+		print "TRANSACTION FAILED! %s" % e.message
+		return
 
 	th = TransactionHandler(tx_info)
 
 	sign_tx(int(sender_wallet.wallet_index),
-			sender_wallet.index,
+			keylist,
 			tx_unsigned.as_hex(include_unspents=True),
 			cb=th.callback)
 
