@@ -54,7 +54,7 @@ class BlockchainFetcher():
 
 	def update_transactions(self, block_height):
 		for unconf_tx in self.db.get_all_transactions():
-			unconf_tx = json.loads(unconf_tx)['tx_id']
+			unconf_tx = unconf_tx['tx_id']
 			tx_dict = {}
 			try:
 				tx_dict = self.insight.get_tx_dict(unconf_tx)
