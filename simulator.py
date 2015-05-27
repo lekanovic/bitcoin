@@ -16,7 +16,7 @@ from pycoin.encoding import wif_to_secret_exponent
 from pycoin.tx.pay_to import build_hash160_lookup
 from random import randint
 import logging
-from api import create_account, pay_to_address
+from api import create_account, pay_to_address, multisig_transacion
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -76,7 +76,7 @@ def send_chucknorris_joke_as_proofofexistens(from_email):
     else:
         print "Transaction failed"
 
-def multisig_transacion(from_email, to_email, escrow_email, amount):
+def multisig_2of3(from_email, to_email, escrow_email, amount):
     message = "This is a multisig test"
     multisig_transacion(from_email, to_email, escrow_email, amount, msg=message)
 
@@ -133,16 +133,16 @@ def one_round():
     sender, balance = find_account_with_balance()
     receiver = find_random_account()
     amount = balance / 10
-    '''
-    if randint(0,20) == 10:
-        send_chucknorris_joke_as_proofofexistens(sender['email'])
 
-    if randint(0,20) == 10:
-        escrow = find_random_account()
-        multisig_transacion(sender['email'], receiver['email'], escrow['email'], amount)
-    '''
-    print "%s sending %d to %s" % (sender['email'], amount, receiver['email'])
-    send_from_to(sender['email'], receiver['email'], amount)
+    #if randint(0,20) == 10:
+    #    send_chucknorris_joke_as_proofofexistens(sender['email'])
+
+    #if randint(0,20) == 10:
+    escrow = find_random_account()
+    multisig_2of3(sender['email'], receiver['email'], escrow['email'], amount)
+
+    #print "%s sending %d to %s" % (sender['email'], amount, receiver['email'])
+    #send_from_to(sender['email'], receiver['email'], amount)
 
 
 def send_from_to(from_email, to_email, amount):
