@@ -97,7 +97,6 @@ class BlockchainFetcher():
 
 			for t1 in tx_hashes:
 				hex_tx = b2h_rev(t1)
-				print hex_tx
 				tx = self.insight.get_tx(t1)
 				self.check_inputs_outputs(tx)
 			self.update_transactions(blockheader.height)
@@ -110,7 +109,7 @@ class BlockchainFetcher():
 			current_block = b2h_rev(tip_hash)
 			if current_block != previous_block: # A new block has been accepted in the blockchain
 				blockheader, tx_hashes = self.insight.get_blockheader_with_transaction_hashes(tip_hash)
-				logger.debug(blockheader)
+				logger.info(blockheader.height)
 
 				for t1 in tx_hashes:
 					hex_tx = b2h_rev(t1)
