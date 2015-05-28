@@ -231,6 +231,45 @@ def multisig_transacion(from_email, to_email, escrow_email, amount, msg="undefin
 			tx_unsigned.as_hex(include_unspents=True),
 			cb=th.callback)
 
+def write_blockchain_message(email, message):
+	db = Storage()
+	tx_unsigned = 0
+
+	# Find the user in database
+	sender = db.find_account(email)
+	wallet_index = sender["wallets"][0]
+
+	wallet = db.find_wallet(wallet_index)
+
+	sender = Wallet(wallet['public_key'])
+
+	try:
+		tx_unsigned, keylist, address = sender.proof_of_existens(message)
+	except InsufficientFunds as e:
+		print "TRANSACTION FAILED! %s" % e.message
+		return
+	except UnconfirmedAddress as e:
+		print "TRANSACTION FAILED! %s" % e.message
+		return
+
+	tx_info={}
+	tx_info['from'] = email
+	tx_info['to_addr'] = address
+	tx_info['to_email'] =  ''
+	tx_info['amount'] = ''
+	tx_info['confirmations'] = -1
+	tx_info['date'] = str( datetime.datetime.now() )
+	tx_info['block'] = -1
+	tx_info['type'] = "OPRETURN"
+	tx_info['message'] = message
+
+	th = TransactionHandler(tx_info)
+
+	sign_tx(int(sender.wallet_index),
+			keylist,
+			tx_unsigned.as_hex(include_unspents=True),
+			cb=th.callback)
+
 '''
 db = Storage()
 
