@@ -16,7 +16,7 @@ from pycoin.encoding import wif_to_secret_exponent
 from pycoin.tx.pay_to import build_hash160_lookup
 from random import randint
 import logging
-from api import create_account, pay_to_address, multisig_transacion
+from api import create_account, pay_to_address, multisig_transacion, write_blockchain_message
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -41,40 +41,7 @@ def send_chucknorris_joke_as_proofofexistens(from_email):
     tx_unsigned = 0
     proofofexistens_msg = get_chucknorris_joke()
 
-    # Find the user in database
-    sender = json.loads(db.find_account(from_email))
-    # Add the user to Account object
-    sender = Account.from_json(sender)
-
-    try:
-        tx_unsigned = sender.proof_of_existens(proofofexistens_msg)
-    except InsufficientFunds:
-        balance = sender.wallet_balance()
-        a = json.loads(db.find_account(from_email))
-        if a['wallet-balance'] != balance:
-            print "Updating balance from %d to %d" % (a['wallet-balance'], balance)
-            db.update_account(a)
-        else:
-            print "Transaction failed amount too small.."
-        return
-
-    if not tx_unsigned is None:
-        d={}
-        d['from'] = from_email
-        d['to_addr'] = "N/A"
-        d['to_email'] =  "N/A"
-        d['amount'] = 10000
-        d['confirmations'] = -1
-        d['date'] = str( datetime.datetime.now() )
-        d['block'] = -1
-        d['type'] = "OPRETURN"
-        d['message'] = proofofexistens_msg
-        print d
-        sender.tx_info = d
-        sign_transaction(sender, tx_unsigned, sender.transaction_cb)
-
-    else:
-        print "Transaction failed"
+    write_blockchain_message(from_email, proofofexistens_msg)
 
 def multisig_2of3(from_email, to_email, escrow_email, amount):
     message = "This is a multisig test"
@@ -135,11 +102,11 @@ def one_round():
     amount = balance / 10
 
     #if randint(0,20) == 10:
-    #    send_chucknorris_joke_as_proofofexistens(sender['email'])
+    send_chucknorris_joke_as_proofofexistens(sender['email'])
 
     #if randint(0,20) == 10:
-    escrow = find_random_account()
-    multisig_2of3(sender['email'], receiver['email'], escrow['email'], amount)
+    #    escrow = find_random_account()
+    #    multisig_2of3(sender['email'], receiver['email'], escrow['email'], amount)
 
     #print "%s sending %d to %s" % (sender['email'], amount, receiver['email'])
     #send_from_to(sender['email'], receiver['email'], amount)
