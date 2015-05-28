@@ -309,12 +309,15 @@ class Wallet():
 		logger.debug("Wallet balance %s", self.wallet_balance())
 		txs_in = [spendable.tx_in() for spendable in to_spend]
 
+		key_indexes = self.__get_key_indexes(to_spend)
+
 		# Create 40 bytes packages from the message that we want to
 		# embed in the transaction.
 		txs_out = []
 		txs_out.extend(ProofOfExistence(message).generate_txout())
 
-		script = standard_tx_out_script(self.get_bitcoin_address())
+		address = self.get_bitcoin_address()
+		script = standard_tx_out_script(address)
 		txs_out.append(TxOut(amount, script))
 
 		# Return the change back to our wallet if there is any change.
@@ -333,7 +336,7 @@ class Wallet():
 		logger.debug(t)
 		logger.debug("Transaction size %d unsigned", len(t))
 
-		return tx
+		return tx, key_indexes, address
 
 	# http://bitcore.io/playground/#/transaction
 	def multisig_2_of_3(self, keys):
