@@ -1,5 +1,5 @@
 from pycoin.tx import TxOut
-from pycoin.tx.pay_to import ScriptOPReturn
+from pycoin.tx.pay_to import ScriptNulldata
 
 MAX_MESSAGE_SIZE=40
 
@@ -14,7 +14,7 @@ class ProofOfExistence():
 							for i in range(0, len(self.contract), MAX_MESSAGE_SIZE)]
 
 		for chunk in chunks_40_bytes:
-			script = ScriptOPReturn(chunk).script()
+			script = ScriptNulldata(chunk).script()
 			self.transaction_out.append(TxOut(self.amount, script))
 
 		return self.transaction_out
