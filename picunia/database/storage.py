@@ -86,8 +86,11 @@ class Storage(object):
 		else:
 			raise ValueError("Wrong type")
 
-		return loads(dumps(res))
+		if res == None:
+			return None
 
+		del res['_id']
+		return res
 
 	def find_account_index(self, account):
 		if type(account) != int:
