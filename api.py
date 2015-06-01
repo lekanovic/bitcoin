@@ -90,7 +90,16 @@ def del_wallet(email, wallet_index):
 
 def fetch_account(email):
 	db = Storage()
-	return db.find_account(from_email)
+	return db.find_account(email)
+
+def fetch_wallet(email, index=0):
+	db = Storage()
+	account = db.find_account(email)
+
+	wallet_id = account['wallets'][index]
+	wallet = db.find_wallet(wallet_id)
+
+	return wallet
 
 def activate_account(email):
 	db = Storage()
