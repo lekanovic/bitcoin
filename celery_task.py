@@ -13,6 +13,10 @@ app.conf.update(
 )
 
 @app.task
+def validate_passwd_rpc(email, password):
+	return log_in(email, password)
+
+@app.task
 def create_account_rpc(name,lastname,email,password):
 	print name,lastname,email,password
 	start_service()
