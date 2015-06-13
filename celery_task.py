@@ -56,7 +56,7 @@ def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 
 	return "MULTISIG transaction %s created" % (transaction_handler.tx_info['tx_id'])
 
-@app.tasks
+@app.task
 def write_blockchain_message_rpc(email, message):
 	print email, message
 	start_service()
