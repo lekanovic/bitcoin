@@ -60,6 +60,8 @@ def create_account(name,lastname,email,password):
 	db.add_wallet(dummy_wallet)
 	db.add_account(account)
 
+	return kh
+
 def add_wallet(email):
 	db = Storage()
 	wallet_counter = db.get_number_of_wallets()
@@ -171,6 +173,8 @@ def pay_to_address(send_from, send_to, amount, msg="undefined"):
 			tx_unsigned.as_hex(include_unspents=True),
 			cb=th.callback)
 
+	return th
+
 def multisig_transacion(from_email, to_email, escrow_email, amount, msg="undefined"):
 	def create_user_info(email, wallet_index, key_index):
 		user = {}
@@ -240,6 +244,8 @@ def multisig_transacion(from_email, to_email, escrow_email, amount, msg="undefin
 			tx_unsigned.as_hex(include_unspents=True),
 			cb=th.callback)
 
+	return th
+
 def write_blockchain_message(email, message):
 	db = Storage()
 	tx_unsigned = 0
@@ -278,6 +284,8 @@ def write_blockchain_message(email, message):
 			keylist,
 			tx_unsigned.as_hex(include_unspents=True),
 			cb=th.callback)
+
+	return th
 
 '''
 db = Storage()
