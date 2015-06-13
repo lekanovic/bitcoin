@@ -14,6 +14,7 @@ class TransactionHandler():
 	def __init__(self, tx_info):
 		self.tx_info = tx_info
 		self.insight = InsightService(Settings.INSIGHT_ADDRESS)
+		self.has_been_called = False
 
 	def callback(self, tx_hex):
 		logger.debug("Transaction size %d signed %s", len(tx_hex), tx_hex)
@@ -37,6 +38,8 @@ class TransactionHandler():
 		except urllib2.HTTPError as ex:
 			logger.info("Transaction could not be sent")
 			return
+
+		self.has_been_called = True
 		logger.debug("%s", json.loads(ret)['txid'])
 
 
@@ -44,6 +47,7 @@ class KeyCreateHandler():
 	def __init__(self, wallet_name='undefined'):
 		self.db = Storage()
 		self.name = wallet_name
+		self.has_been_called = False
 
 	def callback(self, key_hex):
 		wallet = Wallet(key_hex).to_dict()
@@ -55,3 +59,5 @@ class KeyCreateHandler():
 		if not self.db.add_wallet(wallet):
 			logger.debug("Wallet %s already exist, updating", wallet['wallet_index'])
 			self.db.update_wallet(wallet)
+
+		self.has_been_called = True
