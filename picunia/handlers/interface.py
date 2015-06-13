@@ -31,8 +31,6 @@ class TransactionHandler():
 
 		db.add_transaction(self.tx_info)
 
-		self.tx_info = {}
-
 		try:
 			ret = self.insight.send_tx(tx)
 		except urllib2.HTTPError as ex:
