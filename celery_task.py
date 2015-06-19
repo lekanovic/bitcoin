@@ -1,4 +1,5 @@
 from picunia.security.sign_tx_client import start_service
+from lockfile import LockFile
 from celery import Celery
 from api import *
 import time
@@ -19,6 +20,9 @@ def validate_passwd_rpc(email, password):
 @app.task
 def create_account_rpc(name,lastname,email,password):
 	print name,lastname,email,password
+	lock = LockFile("createaccount")
+	lock.acquire()
+
 	start_service()
 	time.sleep(2)
 
@@ -26,6 +30,8 @@ def create_account_rpc(name,lastname,email,password):
 
 	while not key_handler.has_been_called:
 		time.sleep(0.5)
+
+	lock.release()
 
 	return "Account %s created" % (email)
 
@@ -37,6 +43,9 @@ def fetch_account_rpc(email):
 @app.task
 def pay_to_address_rpc(send_from, send_to, amount, msg):
 	print send_from, send_to, amount, msg
+	lock = LockFile("paytoaddress")
+	lock.aquire()
+
 	start_service()
 	time.sleep(2)
 
@@ -45,11 +54,16 @@ def pay_to_address_rpc(send_from, send_to, amount, msg):
 	while not transaction_handler.has_been_called:
 		time.sleep(0.5)
 
+	lock.release()
+
 	return "STANDARD transaction %s created" % (transaction_handler.tx_info['tx_id'])
 
 @app.task
 def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 	print from_email, to_email, escrow_email, amount, msg
+	lock = LockFile("multisigtrans")
+	lock.aquire()
+
 	start_service()
 	time.sleep(2)
 
@@ -58,11 +72,16 @@ def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 	while not transaction_handler.has_been_called:
 		time.sleep(0.5)
 
+	lock.release()
+
 	return "MULTISIG transaction %s created" % (transaction_handler.tx_info['tx_id'])
 
 @app.task
 def write_blockchain_message_rpc(email, message):
 	print email, message
+	lock = LockFile("blockchainmessage")
+	lock.aquire()
+
 	start_service()
 	time.sleep(2)
 
@@ -70,5 +89,7 @@ def write_blockchain_message_rpc(email, message):
 
 	while not transaction_handler.has_been_called:
 		time.sleep(0.5)
+
+	lock.release()
 
 	return "BLKCHN_MESSAGE transaction %s created" % (transaction_handler.tx_info['tx_id'])
