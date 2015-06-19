@@ -37,13 +37,15 @@ class Consumer(threading.Thread):
     def run(self):
         global send_queue
         global resend_package
-        while True:
-            package = send_queue.get()
-            logger.debug("Consumed")
 
-            self.confirm_package(package)
+        package = send_queue.get()
+        logger.debug("Consumed")
 
-            send_queue.task_done()
+        self.confirm_package(package)
+
+        send_queue.task_done()
+
+        logger.info("End Consumer")
 
 
 class Receiver:
@@ -115,6 +117,8 @@ class Receiver:
 
                         resend_package = False
                         self.event.set()
+			logger.info("End Receiver")
+			break
 
     def __init__(self, event, compress=True, **kwargs):
         self.p = subprocess.Popen(['minimodem', '-r', '-8', '-A',
