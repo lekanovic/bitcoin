@@ -3,6 +3,8 @@ from picunia.users.wallet import Wallet, InsufficientFunds, UnconfirmedAddress
 from picunia.security.sign_tx_client import request_public_key, start_service, sign_tx
 from picunia.handlers.interface import TransactionHandler, KeyCreateHandler
 from picunia.security.crypt.utils import encrypt_password, validate_password
+from random import randint
+import random
 import json
 import datetime
 import logging
@@ -90,6 +92,22 @@ def del_wallet(email, wallet_index):
 		db.update_account(account)
 	else:
 		raise ValueError("wallet index %d does not exist in %s" % (wallet_index, email))
+
+def find_account_with_balance():
+	def find_random_account(db):
+		number_of_accounts = db.get_number_of_accounts()
+		rnd = str(random.randrange(0, number_of_accounts))
+		return db.find_account_index(int(rnd))
+
+	db = Storage()
+	while True:
+		account = find_random_account(db)
+		wallet_index = account['wallets'][0]
+		wallet = db.find_wallet(wallet_index)
+
+		if wallet['wallet_balance'] > 10000:
+			return account, wallet['wallet_balance']
+	return {}, -1
 
 def fetch_account(email):
 	db = Storage()
