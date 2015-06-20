@@ -2,7 +2,7 @@ from picunia.security.sign_tx_client import start_service
 from lockfile import LockFile
 from celery import Celery
 from api import *
-import time
+import time, json
 
 app = Celery('tasks', backend='amqp', broker='amqp://localhost')
 app.conf.update(
@@ -41,10 +41,20 @@ def fetch_account_rpc(email):
 	return a
 
 @app.task
+def find_account_with_balance_rpc():
+	account, balance = find_account_with_balance()
+
+	d = {}
+	d['email'] = account['email']
+	d['balance'] = balance
+	d['wallet_index'] = 0
+	return json.dumps(d)
+
+@app.task
 def pay_to_address_rpc(send_from, send_to, amount, msg):
 	print send_from, send_to, amount, msg
 	lock = LockFile("paytoaddress")
-	lock.aquire()
+	lock.acquire()
 
 	start_service()
 	time.sleep(2)
@@ -62,7 +72,7 @@ def pay_to_address_rpc(send_from, send_to, amount, msg):
 def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 	print from_email, to_email, escrow_email, amount, msg
 	lock = LockFile("multisigtrans")
-	lock.aquire()
+	lock.acquire()
 
 	start_service()
 	time.sleep(2)
@@ -80,7 +90,7 @@ def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 def write_blockchain_message_rpc(email, message):
 	print email, message
 	lock = LockFile("blockchainmessage")
-	lock.aquire()
+	lock.acquire()
 
 	start_service()
 	time.sleep(2)
