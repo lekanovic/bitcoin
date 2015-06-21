@@ -27,7 +27,7 @@ class Transmitter:
         rs = RSCodec(Settings.RSCODEC_NSYM)
         text = rs.encode(text)
 
-        self.p.stdin.write(text)
+        self.p.communicate(text)
 
     def close(self):
         self.p.stdin.close()
