@@ -168,11 +168,9 @@ def pay_to_address(send_from, send_to, amount, msg="undefined"):
 	try:
 		tx_unsigned, keylist = from_email_wallet.pay_to_address(bitcoin_address, amount)
 	except InsufficientFunds as e:
-		print "TRANSACTION FAILED! %s" % e.message
-		return
+		raise
 	except UnconfirmedAddress as e:
-		print "TRANSACTION FAILED! %s" % e.message
-		return
+		raise
 
 	tx_info={}
 	tx_info['from'] = send_from
