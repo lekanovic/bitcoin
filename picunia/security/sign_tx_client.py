@@ -9,6 +9,7 @@ from crypt.reedsolo import RSCodec, ReedSolomonError
 from Queue import Queue
 from protocol import assemble_package, disassemble_package, assemble_package_tx_only
 from transmitter import transmit_package
+from pycoin.tx.Tx import Tx
 
 
 send_queue = Queue()
@@ -58,6 +59,16 @@ class Receiver:
             self.func_cb = []
             self.event = event
 
+	def check_signature(self, tx_hex):
+	    if tx_hex.find('tpub') == 0 or tx_hex.find('xpub') == 0:
+		return True
+
+	    tx = Tx.tx_from_hex(tx_hex)
+	    for idx, tx_in in enumerate(tx.txs_in):
+		if not tx.is_signature_ok(tx_in_idx=idx):
+		    return False
+	    return True
+
         def run(self):
             in_packet = False
             packet = ''
@@ -106,6 +117,12 @@ class Receiver:
 
                         if p.tx.find('RESEND') > 0:
                             logger.debug("RESEND sent by the server..")
+                            resend_package = True
+                            self.event.set()
+                            continue
+
+			if not self.check_signature(p.tx):
+                            logger.debug("SIGNATURE ERROR wait for resend..")
                             resend_package = True
                             self.event.set()
                             continue
