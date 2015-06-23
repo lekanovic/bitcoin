@@ -59,7 +59,14 @@ def pay_to_address_rpc(send_from, send_to, amount, msg):
 	start_service()
 	time.sleep(2)
 
-	transaction_handler = pay_to_address(send_from, send_to, amount, msg=msg)
+	try:
+		transaction_handler = pay_to_address(send_from, send_to, amount, msg=msg)
+	except InsufficientFunds as e:
+		lock.release()
+		return "TRANSACTION FAILED! %s" % e.message
+	except UnconfirmedAddress as e:
+		lock.release()
+		return "TRANSACTION FAILED! %s" % e.message
 
 	while not transaction_handler.has_been_called:
 		time.sleep(0.5)
