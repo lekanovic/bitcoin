@@ -100,7 +100,12 @@ class BlockchainFetcher():
 
 			for t1 in tx_hashes:
 				hex_tx = b2h_rev(t1)
-				tx = self.insight.get_tx(t1)
+				tx = 0
+				try:
+					tx = self.insight.get_tx(t1)
+				except TypeError:
+					logger.info("Could not read tx: %s" % hex_tx)
+					continue
 				self.check_inputs_outputs(tx)
 			self.update_transactions(blockheader.height)
 
@@ -116,7 +121,12 @@ class BlockchainFetcher():
 
 				for t1 in tx_hashes:
 					hex_tx = b2h_rev(t1)
-					tx = self.insight.get_tx(t1)
+					tx = 0
+					try:
+						tx = self.insight.get_tx(t1)
+					except TypeError:
+						logger.info("Could not read tx: %s" % hex_tx)
+						continue
 					self.check_inputs_outputs(tx)
 				self.update_transactions(blockheader.height)
 			previous_block = current_block
