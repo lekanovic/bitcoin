@@ -150,6 +150,17 @@ class Storage(object):
 			return True
 		return False
 
+	def find_all_transactions(self, email):
+		sent = [loads(dumps(transaction)) for transaction in
+				self.dbt.transaction.find({"from" : email})]
+
+		received = [loads(dumps(transaction)) for transaction in
+				self.dbt.transaction.find({"to_email" : email})]
+		d = {}
+		d = {"sent" : sent, "received" : received}
+
+		return d
+
 	def find_transaction(self, transaction):
 		res = self.dbt.transaction.find_one({"tx_id" : transaction['tx_id']})
 		return dumps(res, indent=4)
@@ -197,6 +208,7 @@ doc2 = {
 
 '''
 db = Storage()
+a = db.find_all_transactions("hector.santos10@example.com")
 
 blk = {}
 blk['block-height'] = 1001

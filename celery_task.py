@@ -110,3 +110,9 @@ def write_blockchain_message_rpc(email, message):
 	lock.release()
 
 	return "BLKCHN_MESSAGE transaction %s created" % (transaction_handler.tx_info['tx_id'])
+
+@app.task
+def fetch_transaction_by_email_rpc(email):
+	d = fetch_transactions_by_email(email)
+
+	return json.dumps(d)

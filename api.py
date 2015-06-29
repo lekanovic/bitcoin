@@ -113,6 +113,12 @@ def fetch_account(email):
 	db = Storage()
 	return db.find_account(email)
 
+def fetch_transactions_by_email(email):
+	db = Storage()
+	txs = db.find_all_transactions(email)
+
+	return txs
+
 def fetch_wallet(email, index=0):
 	db = Storage()
 	account = db.find_account(email)
