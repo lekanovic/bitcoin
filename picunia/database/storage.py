@@ -157,7 +157,38 @@ class Storage(object):
 		received = [loads(dumps(transaction)) for transaction in
 				self.dbt.transaction.find({"to_email" : email})]
 		d = {}
-		d = {"sent" : sent, "received" : received}
+
+		sent_array = []
+		for t in sent:
+			tmp = {}
+			tmp['to_email'] = t['to_email']
+			tmp['fee'] = t['fee']
+			tmp['to_addr'] = t['to_addr']
+			tmp['tx_id'] = t['tx_id']
+			tmp['amount'] = t['amount']
+			tmp['confirmations'] = t['confirmations']
+			tmp['date'] = t['date']
+			tmp['message'] = t['message']
+			tmp['type'] = t['type']
+			tmp['block'] = t['block']
+			sent_array.append(tmp)
+
+		received_array = []
+		for p in received:
+			tmp = {}
+			tmp['from'] = p['from']
+			tmp['fee'] = p['fee']
+			tmp['to_addr'] = p['to_addr']
+			tmp['tx_id'] = p['tx_id']
+			tmp['amount'] = p['amount']
+			tmp['confirmations'] = p['confirmations']
+			tmp['date'] = p['date']
+			tmp['message'] = p['message']
+			tmp['type'] = p['type']
+			tmp['block'] = p['block']
+			received_array.append(tmp)
+
+		d = {"sent" : sent_array, "received" : received_array}
 
 		return d
 
@@ -205,10 +236,10 @@ doc2 = {
 		"public_key": "tpubDCVcrTzunZwuc67hSQHmjHN8efpCVw4aZDUqvztyryj8QDpsvjxipein85QKt3ZuWXGapnuYVBEUGyvAQMJBNpruqxqStQ5RdrLhRCzNtuc",
 		"date":  str( datetime.datetime.now() )
 		}
-
 '''
 db = Storage()
 a = db.find_all_transactions("hector.santos10@example.com")
+print a
 
 blk = {}
 blk['block-height'] = 1001
