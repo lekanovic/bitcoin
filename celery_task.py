@@ -28,7 +28,11 @@ def create_account_rpc(name,lastname,email,password):
 	start_service()
 	time.sleep(2)
 
-	key_handler = create_account(name,lastname,email,password.encode('utf-8'))
+	try:
+		key_handler = create_account(name,lastname,email,password.encode('utf-8'))
+	except AccountExistException as e:
+		lock.release()
+		return "FAILED: ACCOUNT ALREADY EXISTS! %s" % e.message
 
 	while not key_handler.has_been_called:
 		time.sleep(0.5)
@@ -86,7 +90,14 @@ def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 	start_service()
 	time.sleep(2)
 
-	transaction_handler = multisig_transacion(from_email, to_email, escrow_email, amount, msg=msg)
+	try:
+		transaction_handler = multisig_transacion(from_email, to_email, escrow_email, amount, msg=msg)
+	except InsufficientFunds as e:
+		lock.release()
+		return "TRANSACTION FAILED! %s" % e.message
+	except UnconfirmedAddress as e:
+		lock.release()
+		return "TRANSACTION FAILED! %s" % e.message
 
 	while not transaction_handler.has_been_called:
 		time.sleep(0.5)
@@ -104,7 +115,14 @@ def write_blockchain_message_rpc(email, message):
 	start_service()
 	time.sleep(2)
 
-	transaction_handler = write_blockchain_message(email, message)
+	try:
+		transaction_handler = write_blockchain_message(email, message)
+	except InsufficientFunds as e:
+		lock.release()
+		return "TRANSACTION FAILED! %s" % e.message
+	except UnconfirmedAddress as e:
+		lock.release()
+		return "TRANSACTION FAILED! %s" % e.message
 
 	while not transaction_handler.has_been_called:
 		time.sleep(0.5)

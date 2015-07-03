@@ -160,16 +160,13 @@ def pay_to_address(send_from, send_to, amount, msg="undefined"):
 	bitcoin_address = to_email_wallet.get_bitcoin_address()
 
 	wallet_index = from_email["wallets"][0]
-	print wallet_index
+
 	wallet = db.find_wallet(wallet_index)
 	print "Wallet balance %d" % wallet['wallet_balance']
 
 	key = wallet['public_key']
 
 	from_email_wallet = Wallet(key)
-
-	print from_email_wallet.wallet_index
-	print from_email_wallet.index
 
 	try:
 		tx_unsigned, keylist = from_email_wallet.pay_to_address(bitcoin_address, amount)
@@ -254,11 +251,9 @@ def multisig_transacion(from_email, to_email, escrow_email, amount, msg="undefin
 	try:
 		tx_unsigned, keylist = sender_wallet.pay_to_address(multi_address,amount)
 	except InsufficientFunds as e:
-		print "TRANSACTION FAILED! %s" % e.message
-		return
+		raise
 	except UnconfirmedAddress as e:
-		print "TRANSACTION FAILED! %s" % e.message
-		return
+		raise
 
 	th = TransactionHandler(tx_info)
 
@@ -284,11 +279,9 @@ def write_blockchain_message(email, message):
 	try:
 		tx_unsigned, keylist, address = sender.proof_of_existens(message)
 	except InsufficientFunds as e:
-		print "TRANSACTION FAILED! %s" % e.message
-		return
+		raise
 	except UnconfirmedAddress as e:
-		print "TRANSACTION FAILED! %s" % e.message
-		return
+		raise
 
 	tx_info={}
 	tx_info['from'] = email
