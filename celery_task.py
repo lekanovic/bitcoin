@@ -13,6 +13,8 @@ app.conf.update(
     CELERY_ENABLE_UTC=True,
 )
 
+signservice = "signservice"
+
 @app.task
 def validate_passwd_rpc(email, password):
 	return log_in(email, password)
@@ -20,7 +22,7 @@ def validate_passwd_rpc(email, password):
 @app.task
 def create_account_rpc(name,lastname,email,password):
 	print name,lastname,email,password
-	lock = LockFile("createaccount")
+	lock = LockFile(signservice)
 	lock.acquire()
 
 	start_service()
@@ -53,7 +55,7 @@ def find_account_with_balance_rpc():
 @app.task
 def pay_to_address_rpc(send_from, send_to, amount, msg):
 	print send_from, send_to, amount, msg
-	lock = LockFile("paytoaddress")
+	lock = LockFile(signservice)
 	lock.acquire()
 
 	start_service()
@@ -78,7 +80,7 @@ def pay_to_address_rpc(send_from, send_to, amount, msg):
 @app.task
 def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 	print from_email, to_email, escrow_email, amount, msg
-	lock = LockFile("multisigtrans")
+	lock = LockFile(signservice)
 	lock.acquire()
 
 	start_service()
@@ -96,7 +98,7 @@ def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 @app.task
 def write_blockchain_message_rpc(email, message):
 	print email, message
-	lock = LockFile("blockchainmessage")
+	lock = LockFile(signservice)
 	lock.acquire()
 
 	start_service()
