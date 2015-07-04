@@ -59,15 +59,15 @@ class Receiver:
             self.func_cb = []
             self.event = event
 
-	def check_signature(self, tx_hex):
-	    if tx_hex.find('tpub') == 0 or tx_hex.find('xpub') == 0:
-		return True
+    def check_signature(self, tx_hex):
+        if tx_hex.find('tpub') == 0 or tx_hex.find('xpub') == 0:
+            return True
 
-	    tx = Tx.tx_from_hex(tx_hex)
-	    for idx, tx_in in enumerate(tx.txs_in):
-		if not tx.is_signature_ok(tx_in_idx=idx):
-		    return False
-	    return True
+        tx = Tx.tx_from_hex(tx_hex)
+        for idx, tx_in in enumerate(tx.txs_in):
+            if not tx.is_signature_ok(tx_in_idx=idx):
+                return False
+        return True
 
         def run(self):
             in_packet = False
@@ -121,7 +121,7 @@ class Receiver:
                             self.event.set()
                             continue
 
-			if not self.check_signature(p.tx):
+                        if not self.check_signature(p.tx):
                             logger.debug("SIGNATURE ERROR wait for resend..")
                             resend_package = True
                             self.event.set()
@@ -134,8 +134,8 @@ class Receiver:
 
                         resend_package = False
                         self.event.set()
-			logger.info("End Receiver")
-			break
+                        logger.info("End Receiver")
+                        break
 
     def __init__(self, event, compress=True, **kwargs):
         self.p = subprocess.Popen(['minimodem', '-r', '-8', '-A',
