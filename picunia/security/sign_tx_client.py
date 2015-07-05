@@ -58,22 +58,23 @@ class Receiver:
             self.compress = compress
             self.func_cb = []
             self.event = event
+            self.signal = True
 
-    def check_signature(self, tx_hex):
-        if tx_hex.find('tpub') == 0 or tx_hex.find('xpub') == 0:
+        def check_signature(self, tx_hex):
+            if tx_hex.find('tpub') == 0 or tx_hex.find('xpub') == 0:
+                return True
+
+            tx = Tx.tx_from_hex(tx_hex)
+            for idx, tx_in in enumerate(tx.txs_in):
+                if not tx.is_signature_ok(tx_in_idx=idx):
+                    return False
             return True
-
-        tx = Tx.tx_from_hex(tx_hex)
-        for idx, tx_in in enumerate(tx.txs_in):
-            if not tx.is_signature_ok(tx_in_idx=idx):
-                return False
-        return True
 
         def run(self):
             in_packet = False
             packet = ''
             global resend_package
-            while True:
+            while self.signal:
                 self.event.clear()
                 readers, _, _ = select.select([self.stdout, self.stderr], [], [])
                 if in_packet:
@@ -135,7 +136,7 @@ class Receiver:
                         resend_package = False
                         self.event.set()
                         logger.info("End Receiver")
-                        break
+                        self.signal = False
 
     def __init__(self, event, compress=True, **kwargs):
         self.p = subprocess.Popen(['minimodem', '-r', '-8', '-A',
@@ -164,6 +165,11 @@ def start_service():
     consumer.start()
 
     #receiver.p.wait()
+
+def stop_service():
+    global receiver
+    receiver.reader.signal = False
+    receiver.p.terminate()
 
 def sign_tx(wallet_index, key_index, tx, cb):
     global receiver
