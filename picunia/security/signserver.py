@@ -106,7 +106,9 @@ class Receiver:
                             continue
 
                         logger.debug("Got packet: %s", packet)
-                        msg_queue.put(packet)
+                        if not packet in msg_queue.queue:
+                            print "Package not in queue, adding"
+                            msg_queue.put(packet)
 
     def __init__(self, compress=True, **kwargs):
         self.p = subprocess.Popen(['minimodem', '-r', '-8', '-A', '-c 2.2',
