@@ -60,6 +60,18 @@ class Receiver:
             self.event = event
             self.signal = True
 
+        def is_package_valid(self, s):
+            '''
+            "### NOCARRIER ndata=628 confidence=3.0 ampl=1.999 bps=3000.00 (rate perfect) ###"
+            '''
+            a = s.split('=')
+            ndata = float(a[1].split(' ')[0])
+            confidence = float(a[2].split(' ')[0])
+            ampl = float(a[3].split(' ')[0])
+            if confidence < 2.2 or ndata < 100 or ampl < 1.2:
+                return False
+            return True
+
         def check_signature(self, tx_hex):
             if tx_hex.find('tpub') == 0 or tx_hex.find('xpub') == 0:
                 return True
@@ -94,6 +106,10 @@ class Receiver:
                         packet = ''
                     elif line.startswith('### NOCARRIER '):
                         in_packet = False
+
+                        if not self.is_package_valid(line):
+                            logger.debug("Not valid package")
+                            continue
 
                         b = bytearray()
                         b.extend(packet)
