@@ -116,6 +116,10 @@ class Receiver:
 
                         p = disassemble_package(packet)
 
+                        if not p.rtype == 'SGN':
+                            logger.debug("This package is not from signserver, ignore")
+                            continue
+
                         if p.tx.find('RESEND') > 0:
                             logger.debug("RESEND sent by the server..")
                             resend_package = True
