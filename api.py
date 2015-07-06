@@ -1,6 +1,6 @@
 from picunia.database.storage import Storage
 from picunia.users.wallet import Wallet, InsufficientFunds, UnconfirmedAddress
-from picunia.security.sign_tx_client import request_public_key, start_service, sign_tx
+from picunia.config.settings import Settings
 from picunia.handlers.interface import TransactionHandler, KeyCreateHandler
 from picunia.security.crypt.utils import encrypt_password, validate_password
 from random import randint
@@ -8,6 +8,12 @@ import random
 import json
 import datetime
 import logging
+import time
+import importlib
+
+request_public_key = getattr(importlib.import_module(Settings.SIGN_TX_PATH), "request_public_key")
+start_service = getattr(importlib.import_module(Settings.SIGN_TX_PATH), "start_service")
+sign_tx = getattr(importlib.import_module(Settings.SIGN_TX_PATH), "sign_tx")
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -100,7 +106,10 @@ def find_account_with_balance():
 		return db.find_account_index(int(rnd))
 
 	db = Storage()
-	while True:
+	timeout_start = time.time()
+	timeout = 60*1
+
+	while time.time() < timeout_start + timeout:
 		account = find_random_account(db)
 		wallet_index = account['wallets'][0]
 		wallet = db.find_wallet(wallet_index)
