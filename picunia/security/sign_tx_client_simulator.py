@@ -167,7 +167,7 @@ class Receiver:
         def __init__(self):
             threading.Thread.__init__(self)
 
-            self.func_cb = []
+            self.func_cb = None
             self.signal = True
 
         def run(self):
@@ -179,9 +179,7 @@ class Receiver:
                 tx = signed_queue.get()
 
                 # Callback function with the signed transaction
-                cb = self.func_cb.pop(0)
-                if cb is not None:
-                    cb(tx)
+                self.func_cb(tx)
 
                 logger.info("End Receiver")
                 self.signal = False
@@ -208,8 +206,12 @@ def start_service():
 
 def stop_service():
     global receiver
-    receiver.reader.signal = False
-    receiver.p.terminate()
+    logger_info("Terminate Receiver")
+    try:
+        receiver.reader.signal = False
+        receiver.p.terminate()
+    except:
+        pass
 
 def sign_tx(wallet_index, key_index, tx, cb):
     global receiver
@@ -221,7 +223,7 @@ def sign_tx(wallet_index, key_index, tx, cb):
     if not isinstance(tx, unicode):
         raise TypeError("Expected unicode, got %s" % (type(tx),))
 
-    receiver.reader.func_cb.append(cb)
+    receiver.reader.func_cb = cb
 
     package = assemble_package(wallet_index, key_index, tx, rtype="TXN")
 
@@ -230,7 +232,7 @@ def sign_tx(wallet_index, key_index, tx, cb):
 def request_public_key(wallet_index, cb):
     global receiver
 
-    receiver.reader.func_cb.append(cb)
+    receiver.reader.func_cb = cb
 
     # Since we are requesting a public key we can leave tx empty.
     # And key_index is zero since this is the first key.
