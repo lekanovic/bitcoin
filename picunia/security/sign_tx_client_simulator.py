@@ -206,7 +206,7 @@ def start_service():
 
 def stop_service():
     global receiver
-    logger_info("Terminate Receiver")
+    logger.info("Terminate Receiver")
     try:
         receiver.reader.signal = False
         receiver.p.terminate()
