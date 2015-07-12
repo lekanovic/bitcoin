@@ -1,7 +1,6 @@
 from lockfile import LockFile
 from celery import Celery
 from api import *
-from picunia.config.settings import Settings
 import time, json
 
 app = Celery('tasks', backend='amqp', broker='amqp://localhost')
@@ -14,8 +13,7 @@ app.conf.update(
 )
 
 signservice = "signservice"
-start_service = getattr(importlib.import_module(Settings.SIGN_TX_PATH), "start_service")
-stop_service = getattr(importlib.import_module(Settings.SIGN_TX_PATH), "stop_service")
+
 
 @app.task
 def validate_passwd_rpc(email, password):
@@ -27,9 +25,6 @@ def create_account_rpc(name,lastname,email,password):
 	lock = LockFile(signservice)
 	lock.acquire()
 
-	start_service()
-	time.sleep(2)
-
 	try:
 		key_handler = create_account(name,lastname,email,password.encode('utf-8'))
 	except AccountExistException as e:
@@ -39,7 +34,6 @@ def create_account_rpc(name,lastname,email,password):
 	while not key_handler.has_been_called:
 		time.sleep(0.5)
 
-	stop_service()
 	lock.release()
 
 	return "Account %s created" % (email)
@@ -65,9 +59,6 @@ def pay_to_address_rpc(send_from, send_to, amount, msg):
 	lock = LockFile(signservice)
 	lock.acquire()
 
-	start_service()
-	time.sleep(2)
-
 	try:
 		transaction_handler = pay_to_address(send_from, send_to, amount, msg=msg)
 	except InsufficientFunds as e:
@@ -80,7 +71,6 @@ def pay_to_address_rpc(send_from, send_to, amount, msg):
 	while not transaction_handler.has_been_called:
 		time.sleep(0.5)
 
-	stop_service()
 	lock.release()
 
 	return "STANDARD transaction %s created" % (transaction_handler.tx_info['tx_id'])
@@ -90,9 +80,6 @@ def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 	print from_email, to_email, escrow_email, amount, msg
 	lock = LockFile(signservice)
 	lock.acquire()
-
-	start_service()
-	time.sleep(2)
 
 	try:
 		transaction_handler = multisig_transacion(from_email, to_email, escrow_email, amount, msg=msg)
@@ -106,7 +93,6 @@ def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 	while not transaction_handler.has_been_called:
 		time.sleep(0.5)
 
-	stop_service()
 	lock.release()
 
 	return "MULTISIG transaction %s created" % (transaction_handler.tx_info['tx_id'])
@@ -116,9 +102,6 @@ def write_blockchain_message_rpc(email, message):
 	print email, message
 	lock = LockFile(signservice)
 	lock.acquire()
-
-	start_service()
-	time.sleep(2)
 
 	try:
 		transaction_handler = write_blockchain_message(email, message)
@@ -132,7 +115,6 @@ def write_blockchain_message_rpc(email, message):
 	while not transaction_handler.has_been_called:
 		time.sleep(0.5)
 
-	stop_service()
 	lock.release()
 
 	return "BLKCHN_MESSAGE transaction %s created" % (transaction_handler.tx_info['tx_id'])

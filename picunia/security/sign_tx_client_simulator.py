@@ -202,7 +202,7 @@ def start_service():
     consumer.setDaemon(True)
     consumer.start()
 
-    #receiver.p.wait()
+    time.sleep(1)
 
 def stop_service():
     global receiver

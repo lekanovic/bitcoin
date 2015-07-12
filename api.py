@@ -63,6 +63,8 @@ def create_account(name,lastname,email,password):
 
 	dummy_wallet = create_dummy_wallet(wallet_counter)
 
+	start_service()
+
 	kh = KeyCreateHandler()
 	request_public_key(wallet_counter, kh.callback)
 
@@ -195,6 +197,8 @@ def pay_to_address(send_from, send_to, amount, msg="undefined"):
 	tx_info['type'] = "STANDARD"
 	tx_info['message'] = msg
 
+	start_service()
+
 	th = TransactionHandler(tx_info)
 
 	sign_tx(int(from_email_wallet.wallet_index),
@@ -264,6 +268,8 @@ def multisig_transacion(from_email, to_email, escrow_email, amount, msg="undefin
 	except UnconfirmedAddress as e:
 		raise
 
+	start_service()
+
 	th = TransactionHandler(tx_info)
 
 	sign_tx(int(sender_wallet.wallet_index),
@@ -302,6 +308,8 @@ def write_blockchain_message(email, message):
 	tx_info['block'] = -1
 	tx_info['type'] = "OPRETURN"
 	tx_info['message'] = message
+
+	start_service()
 
 	th = TransactionHandler(tx_info)
 
