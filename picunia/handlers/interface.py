@@ -35,13 +35,13 @@ class TransactionHandler():
 			ret = self.insight.send_tx(tx)
 		except urllib2.HTTPError as ex:
 			logger.info("Transaction could not be sent")
-                except ValueError as e:
+		except ValueError as e:
 			logger.info(e)
 
 		self.has_been_called = True
-                try:
+		try:
 			logger.debug("%s", json.loads(ret)['txid'])
-                except:
+		except:
 			pass
 
 
