@@ -18,8 +18,9 @@ sign_tx = getattr(importlib.import_module(Settings.SIGN_TX_PATH), "sign_tx")
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-class AccountExistException():
-	pass
+class AccountExistException(Exception):
+	def __init__(self, email):
+		self.message = email
 
 
 def log_in(email, password):
@@ -49,7 +50,7 @@ def create_account(name,lastname,email,password):
 	wallet_counter = db.get_number_of_wallets()
 
 	if not res is None  :
-		raise AccountExistException()
+		raise AccountExistException(email)
 
 	account = {}
 	account["status"] = "active"

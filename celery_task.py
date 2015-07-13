@@ -29,7 +29,7 @@ def create_account_rpc(name,lastname,email,password):
 		key_handler = create_account(name,lastname,email,password.encode('utf-8'))
 	except AccountExistException as e:
 		lock.release()
-		return "FAILED: ACCOUNT ALREADY EXISTS! %s" % e.message
+		return "FAILED: ACCOUNT '%s' ALREADY EXISTS!" % e.message
 
 	while not key_handler.has_been_called:
 		time.sleep(0.5)
