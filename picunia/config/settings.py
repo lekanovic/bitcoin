@@ -17,7 +17,7 @@ class Settings():
 		NETCODE = 'BTC'
 		KEY_PATHS = "44H/0H/"
 	if USE_RPI_EMULATOR:
-		SIGN_TX_PATH = "picunia.security.sign_tx_client_simulator"
+		SIGN_TX_PATH = "picunia.security.sign_tx_client_emulator"
 		WIFS_DB = 'wifs.db'
 		KEYS_DB = 'key.db'
 		SEED_FILE = 'masterseed'
