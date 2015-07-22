@@ -128,7 +128,9 @@ def fetch_account(email):
 
 		wallets = []
 		for wallet_id in account['wallets']:
-			wallets.append(db.find_wallet(wallet_id))
+			w = db.find_wallet(wallet_id)
+			del w['_id']
+			wallets.append(w)
 
 		return wallets
 
