@@ -122,8 +122,22 @@ def find_account_with_balance():
 	return {}, -1
 
 def fetch_account(email):
+	def fetch_wallets(email):
+		db = Storage()
+		account = db.find_account(email)
+
+		wallets = []
+		for wallet_id in account['wallets']:
+			wallets.append(db.find_wallet(wallet_id))
+
+		return wallets
+
 	db = Storage()
-	return db.find_account(email)
+	account = db.find_account(email)
+	account[u'transactions'] = fetch_transactions_by_email(email)
+	account[u'wallets'] = fetch_wallets(email)
+
+	return account
 
 def fetch_transactions_by_email(email):
 	db = Storage()
