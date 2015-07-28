@@ -8,6 +8,9 @@ from celery_task import multisig_transacion_rpc
 from celery_task import write_blockchain_message_rpc
 import time, sys, argparse
 import urllib, json, datetime
+import random
+import base64
+import hashlib
 from random import randint
 
 '''
@@ -66,6 +69,12 @@ def send_chucknorris_joke_as_proofofexistens(from_email):
 
 	write_blockchain_message_rpc.delay(from_email, proofofexistens_msg)
 
+def get_rand_regid():
+	hash = random.getrandbits(256)
+	reg_id = "A" + base64.b64encode(str(hash))
+
+	return reg_id
+
 def call_api(items=0):
 	url = "http://api.randomuser.me/?results=%d" % items
 	response = urllib.urlopen(url);
@@ -77,7 +86,8 @@ def call_api(items=0):
 		lastname = d["user"]["name"]["last"]
 		passwd = d["user"]["password"]
 		email = d["user"]["email"]
-		res = create_account_rpc.delay(name, lastname, email, passwd.encode('utf-8'))
+		res = create_account_rpc.delay(name,
+			lastname, email, passwd.encode('utf-8'), get_rand_regid())
 		res_array.append(res)
 	return res_array
 
