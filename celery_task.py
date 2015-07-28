@@ -20,13 +20,13 @@ def validate_passwd_rpc(email, password):
 	return log_in(email, password)
 
 @app.task
-def create_account_rpc(name,lastname,email,password):
+def create_account_rpc(name,lastname,email,password,reg_id):
 	print name,lastname,email,password
 	lock = LockFile(signservice)
 	lock.acquire()
 
 	try:
-		key_handler = create_account(name,lastname,email,password.encode('utf-8'))
+		key_handler = create_account(name,lastname,email,password.encode('utf-8'),reg_id)
 	except AccountExistException as e:
 		lock.release()
 		return "FAILED: ACCOUNT '%s' ALREADY EXISTS!" % e.message

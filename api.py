@@ -32,8 +32,7 @@ def log_in(email, password):
 
 	return validate_password(password, hashed)
 
-
-def create_account(name,lastname,email,password):
+def create_account(name,lastname,email,password,reg_id):
 	def create_dummy_wallet(wallet_index):
 		dummy_wallet = {}
 		dummy_wallet['wallet_index'] = str(wallet_index)
@@ -61,6 +60,7 @@ def create_account(name,lastname,email,password):
 	account["account_index"] = db.get_number_of_accounts()
 	account["created"] = str( datetime.datetime.now() )
 	account["wallets"] = [wallet_counter]
+	account["reg_id"] = reg_id
 
 	dummy_wallet = create_dummy_wallet(wallet_counter)
 
@@ -136,6 +136,8 @@ def fetch_account(email):
 
 	db = Storage()
 	account = db.find_account(email)
+	if not account:
+		return {}
 	account[u'transactions'] = fetch_transactions_by_email(email)
 	account[u'wallets'] = fetch_wallets(email)
 
