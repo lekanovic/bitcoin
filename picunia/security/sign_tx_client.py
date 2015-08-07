@@ -108,7 +108,6 @@ class Receiver:
                         in_packet = False
 
                         if not self.is_package_valid(line):
-                            logger.debug("Not valid package")
                             continue
 
                         b = bytearray()
@@ -148,7 +147,7 @@ class Receiver:
                             continue
 
                         # Callback function with the signed transaction
-                        self.func_cb(tx)
+                        self.func_cb(p.tx)
 
                         resend_package = False
                         self.event.set()
