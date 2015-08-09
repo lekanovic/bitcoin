@@ -10,6 +10,7 @@ class Settings():
 	RSCODEC_NSYM = 64
 	USE_COMPRESSION = True
 	BAUD_MINIMODEM = '3000'
+	CONFIDENCE_MINIMODEM = '2.3'
 	if NETWORK == 'testnet':
 		NETCODE = 'XTN'
 		KEY_PATHS = "44H/1H/"
