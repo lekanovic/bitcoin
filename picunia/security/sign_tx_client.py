@@ -182,13 +182,13 @@ def start_service():
     consumer.setDaemon(True)
     consumer.start()
 
-    time.sleep(1)
+    while not (consumer.isAlive() and receiver.reader.isAlive()):
+        time.sleep(0.2)
 
 def stop_service():
     global receiver
     receiver.reader.signal = False
     pid = receiver.p.pid
-
     os.kill(pid, signal.SIGKILL)
 
 def sign_tx(wallet_index, key_index, tx, cb):
