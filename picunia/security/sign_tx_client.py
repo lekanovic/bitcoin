@@ -4,6 +4,8 @@ import zlib, base64
 import time
 import select
 import logging
+import os
+import signal
 from picunia.config.settings import Settings
 from crypt.reedsolo import RSCodec, ReedSolomonError
 from Queue import Queue
@@ -185,7 +187,9 @@ def start_service():
 def stop_service():
     global receiver
     receiver.reader.signal = False
-    receiver.p.terminate()
+    pid = receiver.p.pid
+
+    os.kill(pid, signal.SIGKILL)
 
 def sign_tx(wallet_index, key_index, tx, cb):
     global receiver
