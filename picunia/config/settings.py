@@ -11,6 +11,10 @@ class Settings():
 	USE_COMPRESSION = True
 	BAUD_MINIMODEM = '3000'
 	CONFIDENCE_MINIMODEM = '2.3'
+	WIFS_DB = 'wifs.db'
+	KEYS_DB = 'key.db'
+	SEED_FILE = 'masterseed'
+
 	if NETWORK == 'testnet':
 		NETCODE = 'XTN'
 		KEY_PATHS = "44H/1H/"
@@ -19,11 +23,5 @@ class Settings():
 		KEY_PATHS = "44H/0H/"
 	if USE_RPI_EMULATOR:
 		SIGN_TX_PATH = "picunia.security.sign_tx_client_emulator"
-		WIFS_DB = 'wifs.db'
-		KEYS_DB = 'key.db'
-		SEED_FILE = 'masterseed'
 	else:
 		SIGN_TX_PATH = "picunia.security.sign_tx_client"
-		WIFS_DB = '/raid10/wifs.db'
-		KEYS_DB = '/raid10/key.db'
-		SEED_FILE = '/raid10/masterseed'
