@@ -6,9 +6,12 @@ from picunia.users.wallet import Wallet
 import urllib2
 import logging
 import json
+import importlib
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+stop_service = getattr(importlib.import_module(Settings.SIGN_TX_PATH), "stop_service")
 
 class TransactionHandler():
 	def __init__(self, tx_info):
@@ -43,7 +46,7 @@ class TransactionHandler():
 			logger.debug("%s", json.loads(ret)['txid'])
 		except:
 			pass
-
+		stop_service()
 
 class KeyCreateHandler():
 	def __init__(self, wallet_name='undefined'):
@@ -63,3 +66,4 @@ class KeyCreateHandler():
 			self.db.update_wallet(wallet)
 
 		self.has_been_called = True
+		stop_service()
