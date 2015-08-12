@@ -76,7 +76,7 @@ class Receiver:
             ndata = float(a[1].split(' ')[0])
             confidence = float(a[2].split(' ')[0])
             ampl = float(a[3].split(' ')[0])
-            if confidence < 2.2 or ndata < 100 or ampl < 1.2:
+            if confidence < 2.2 or ndata < 75 or ampl < 1.2:
                 return False
             return True
 
