@@ -1,7 +1,7 @@
 
 from pycoin.convention import btc_to_satoshi, satoshi_to_btc
 from pycoin.key.BIP32Node import BIP32Node
-from pycoin.services.insight import InsightService
+from picunia.network.insightserviceproxy import InsightServiceProxy
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
 from pycoin.tx.pay_to import address_for_pay_to_script, ScriptMultisig
@@ -41,7 +41,7 @@ class Wallet():
 		self.index = 0
 		self.network = Settings.NETWORK
 		self.netcode = Settings.NETCODE
-		self.insight = InsightService(Settings.INSIGHT_ADDRESS)
+		self.insight = InsightServiceProxy()
 		self.wallet_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
 		self.public_key = bip32node.wallet_key(as_private=False)
 		self.GAP_LIMIT = Settings.GAP_LIMIT
