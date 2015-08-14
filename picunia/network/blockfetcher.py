@@ -1,6 +1,6 @@
 from picunia.database.storage import Storage
 from picunia.users.wallet import Wallet
-from pycoin.services.insight import InsightService
+from picunia.network.insightserviceproxy import InsightServiceProxy
 from pycoin.serialize import b2h_rev
 from pycoin.tx import Tx, TxIn, TxOut, tx_utils
 from picunia.config.settings import Settings
@@ -27,7 +27,7 @@ class BlockchainFetcher():
 		self.pidfile_path = '%s/mydaemon.pid' % os.getcwd()
 		self.pidfile_timeout = 5
 
-		self.insight = InsightService(Settings.INSIGHT_ADDRESS)
+		self.insight = InsightServiceProxy()
 		self.db = Storage()
 
 	def __update_balance(self, w, account):
