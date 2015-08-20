@@ -16,6 +16,8 @@ from pycoin.tx.Tx import Tx
 
 send_queue = Queue()
 resend_package = False
+last_sent_package = None
+receiver = None
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -40,11 +42,12 @@ class Consumer(threading.Thread):
     def run(self):
         global send_queue
         global resend_package
+        global last_sent_package
 
-        package = send_queue.get()
+        last_sent_package = send_queue.get()
         logger.debug("Consumed")
 
-        self.confirm_package(package)
+        self.confirm_package(last_sent_package)
 
         send_queue.task_done()
 
@@ -61,6 +64,7 @@ class Receiver:
             self.func_cb = None
             self.event = event
             self.signal = True
+            self.timeout = 30.0
 
         def is_package_valid(self, s):
             '''
@@ -90,7 +94,14 @@ class Receiver:
             global resend_package
             while self.signal:
                 self.event.clear()
-                readers, _, _ = select.select([self.stdout, self.stderr], [], [])
+                readers, _, _ = select.select([self.stdout, self.stderr], [], [], self.timeout)
+
+                if not readers:
+                    logger.debug("minimodem not responding after %d sec, restarting" % self.timeout)
+                    restart_service()
+                    logger.info("Killing Receiver")
+                    break
+
                 if in_packet:
                     if self.stdout in readers:
                         data = self.stdout.read(1)
@@ -153,8 +164,8 @@ class Receiver:
 
                         resend_package = False
                         self.event.set()
-                        logger.info("End Receiver")
                         self.signal = False
+                        logger.info("End Receiver")
 
     def __init__(self, event, compress=True, **kwargs):
         self.p = subprocess.Popen(['minimodem', '-r', '-8', '-A', '-c', Settings.CONFIDENCE_MINIMODEM,
@@ -166,7 +177,23 @@ class Receiver:
         self.reader.setDaemon(True)
         self.reader.start()
 
-receiver = None
+
+def restart_service():
+    global resend_package
+    global last_sent_package
+
+    # Save the callback otherwise it will be deleted
+    # once we call stop_service.
+    cb = receiver.reader.func_cb
+    resend_package = True
+    stop_service()
+    start_service()
+
+    # Restore the callback function for the newly
+    # created instance.
+    receiver.reader.func_cb = cb
+
+    send_queue.put(last_sent_package)
 
 def start_service():
     event = threading.Event()
