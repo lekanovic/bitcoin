@@ -1,6 +1,6 @@
 from picunia.config.settings import Settings
 from pycoin.services.insight import InsightService
-from urllib2 import HTTPError
+from urllib2 import HTTPError, URLError
 import time
 import logging
 
@@ -8,8 +8,9 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class InsightServiceProxy():
-    def __init__(self):
-        self.insight = InsightService(Settings.INSIGHT_ADDRESS)
+    def __init__(self, url=Settings.INSIGHT_ADDRESS):
+        self.url = url
+        self.insight = InsightService(self.url)
         self.timeout = 10
 
     def is_address_used(self, key):
@@ -22,6 +23,8 @@ class InsightServiceProxy():
                 logger.info("No connection, retrying %s attempts %d" % (err.readline(), i))
                 time.sleep(1)
                 continue
+            except URLError, e:
+                print e.reason, self.url
         return status
 
     def spendables_for_addresses(self, keys):
@@ -34,6 +37,8 @@ class InsightServiceProxy():
                 logger.info("No connection, retrying %s attempts %d" % (err.readline(), i))
                 time.sleep(1)
                 continue
+            except URLError, e:
+                print e.reason, self.url
         return status
 
     def spendables_for_address(self, s):
@@ -46,6 +51,8 @@ class InsightServiceProxy():
                 logger.info("No connection, retrying %s attempts %d" % (err.readline(), i))
                 time.sleep(1)
                 continue
+            except URLError, e:
+                print e.reason, self.url
         return status
 
     def has_unconfirmed_balance(self, keys):
@@ -58,6 +65,8 @@ class InsightServiceProxy():
                 logger.info("No connection, retrying %s attempts %d" % (err.readline(), i))
                 time.sleep(1)
                 continue
+            except URLError, e:
+                print e.reason, self.url
         return status
 
     def get_tx_dict(self, unconf_tx):
@@ -72,6 +81,8 @@ class InsightServiceProxy():
                 logger.info("No connection, retrying %s attempts %d" % (err.readline(), i))
                 time.sleep(1)
                 continue
+            except URLError, e:
+                print e.reason, self.url
         return tx_dict
 
     def get_blockchain_tip(self):
@@ -84,6 +95,8 @@ class InsightServiceProxy():
                 logger.info("No connection, retrying %s attempts %d" % (err.readline(), i))
                 time.sleep(1)
                 continue
+            except URLError, e:
+                print e.reason, self.url
         return tip_hash
 
     def get_blockheader_with_transaction_hashes(self, tip_hash):
@@ -97,6 +110,8 @@ class InsightServiceProxy():
                 logger.info("No connection, retrying %s attempts %d" % (err.readline(), i))
                 time.sleep(1)
                 continue
+            except URLError, e:
+                print e.reason, self.url
         return blockheader, tx_hashes
 
     def get_tx(self, t1):
@@ -109,8 +124,14 @@ class InsightServiceProxy():
                 logger.info("No connection, retrying %s attempts %d" % (err.readline(), i))
                 time.sleep(1)
                 continue
+            except URLError, e:
+                print e.reason, self.url
         return tx
 '''
+import time
+start = time.time()
+
+#insight = InsightServiceProxy(url='http://192.168.0.43:3001')
 insight = InsightServiceProxy()
 
 #Test valid address
@@ -124,4 +145,6 @@ print insight.get_blockheader_with_transaction_hashes(tip)
 print insight.is_address_used('xxxxxxxxxxxxxxx')
 print insight.spendables_for_addresses(['xxxxxxxxxxxxxxx'])
 print insight.has_unconfirmed_balance(['xxxxxxxxxxxxxxx'])
+end = time.time()
+logger.debug("It took %s", (end - start))
 '''
