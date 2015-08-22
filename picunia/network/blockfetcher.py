@@ -32,7 +32,7 @@ class BlockchainFetcher():
 
 	def __update_balance(self, w, account):
 		if w.wallet_balance() != account['wallet_balance']:
-			logger.debug("Old balance %d New balance %d", account['wallet_balance'], w.wallet_balance())
+			logger.info("Old balance %d New balance %d", account['wallet_balance'], w.wallet_balance())
 			self.db.update_wallet(w.to_dict())
 
 	def check_inputs_outputs(self, tx):
@@ -42,7 +42,7 @@ class BlockchainFetcher():
 		for t1 in tx.txs_in:
 			account, wallet = self.db.find_bitcoin_address(t1.bitcoin_address(Settings.NETCODE))
 			if account and wallet['public_key']:
-				logger.debug("Sending bitcoins %s", account['email'])
+				logger.info("Sending bitcoins %s", account['email'])
 				key = wallet['public_key']
 				w = Wallet(key)
 				self.__update_balance(w, wallet)
@@ -50,7 +50,7 @@ class BlockchainFetcher():
 		for t2 in tx.txs_out:
 			account, wallet = self.db.find_bitcoin_address(t2.bitcoin_address(Settings.NETCODE))
 			if account and wallet['public_key']:
-				logger.debug("Receiving bitcoins %s", account['email'])
+				logger.info("Receiving bitcoins %s", account['email'])
 				key = wallet['public_key']
 				w = Wallet(key)
 				self.__update_balance(w, wallet)
@@ -62,7 +62,7 @@ class BlockchainFetcher():
 			try:
 				tx_dict = self.insight.get_tx_dict(unconf_tx)
 			except:
-				logger.debug("WARNING Transaction %s has not made it onto blockchain", unconf_tx)
+				logger.info("WARNING Transaction %s has not made it onto blockchain", unconf_tx)
 				continue
 			tx_dict['tx_id'] = unconf_tx
 			tx_dict['block'] = block_height
