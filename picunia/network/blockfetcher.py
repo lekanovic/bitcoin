@@ -8,7 +8,7 @@ from picunia.config.settings import Settings
 import os
 import time
 import json
-import thread
+import threading
 import datetime
 import logging
 
@@ -40,17 +40,19 @@ class BlockchainFetcher():
 			print "!!! THIS IS A TEMP FIX !!!"
 			return
 		for t1 in tx.txs_in:
-			account, wallet = self.db.find_bitcoin_address(t1.bitcoin_address(Settings.NETCODE))
+			btc_address = t1.bitcoin_address(Settings.NETCODE)
+			account, wallet = self.db.find_bitcoin_address(btc_address)
 			if account and wallet['public_key']:
-				logger.info("Sending bitcoins %s", account['email'])
+				logger.info("Sending bitcoins %s address %s" % (account['email'], btc_address))
 				key = wallet['public_key']
 				w = Wallet(key)
 				self.__update_balance(w, wallet)
 
 		for t2 in tx.txs_out:
-			account, wallet = self.db.find_bitcoin_address(t2.bitcoin_address(Settings.NETCODE))
+			btc_address = t2.bitcoin_address(Settings.NETCODE)
+			account, wallet = self.db.find_bitcoin_address(btc_address)
 			if account and wallet['public_key']:
-				logger.info("Receiving bitcoins %s", account['email'])
+				logger.info("Receiving bitcoins %s address %s" % (account['email'], btc_address))
 				key = wallet['public_key']
 				w = Wallet(key)
 				self.__update_balance(w, wallet)
@@ -81,33 +83,53 @@ class BlockchainFetcher():
 		last_height = self.db.find_last_block()
 
 		if not last_height:
+			logger.info("Catch up no previous block found..")
 			return
 
 		tip_hash = self.insight.get_blockchain_tip()
+
+		logger.info("Catch up unprocessed blocks last block: %d" % last_height)
 		while last_height != current_height:
 			blockheader, tx_hashes = self.insight.get_blockheader_with_transaction_hashes(tip_hash)
 			current_height = blockheader.height
+			if current_height < last_height:
+				msg = "last block %s worked on cannot be larger than tip %s" % (last_height, current_height)
+				raise ValueError(msg)
+			print current_height
 			tip_hash = blockheader.previous_block_hash
 			block_hashes.insert(0,tip_hash)
-			blk = {}
-			blk['block-height'] = blockheader.height
-			self.db.add_block(blk)
 
+			self.db.add_block(blockheader.height)
+
+		logger.info("Catch up from %d with to tip: %d" % (last_height, current_height))
 		# Reverse the list
 		for b in block_hashes:
 			blockheader, tx_hashes = self.insight.get_blockheader_with_transaction_hashes(b)
 			logger.info(blockheader.height)
 
-			for t1 in tx_hashes:
-				hex_tx = b2h_rev(t1)
-				tx = 0
-				try:
-					tx = self.insight.get_tx(t1)
-				except TypeError:
-					logger.info("Could not read tx: %s" % hex_tx)
-					continue
-				self.check_inputs_outputs(tx)
+			t = threading.Thread(target=self.worker_thread, args=(tx_hashes,))
+			t.setDaemon(True)
+			t.start()
+
 			self.update_transactions(blockheader.height)
+		logger.info("Catch up DONE!")
+
+	def worker_thread(self, tx_hashes):
+		name = threading.currentThread().getName()
+		logger.info("start - worker_thread %s" % name)
+		start_time = time.time()
+		for t1 in tx_hashes:
+			hex_tx = b2h_rev(t1)
+			tx = 0
+			try:
+				tx = self.insight.get_tx(t1)
+			except TypeError:
+				logger.info("Could not read tx: %s" % hex_tx)
+				continue
+			self.check_inputs_outputs(tx)
+		delta = (time.time() - start_time)
+		delta = str(datetime.timedelta(seconds=delta))
+		logger.info("end - worker_thread %s runtime: %s" % (name, delta))
 
 	def run(self):
 		previous_block=0
@@ -119,21 +141,16 @@ class BlockchainFetcher():
 				blockheader, tx_hashes = self.insight.get_blockheader_with_transaction_hashes(tip_hash)
 				logger.info(blockheader.height)
 
-				for t1 in tx_hashes:
-					hex_tx = b2h_rev(t1)
-					tx = 0
-					try:
-						tx = self.insight.get_tx(t1)
-					except TypeError:
-						logger.info("Could not read tx: %s" % hex_tx)
-						continue
-					self.check_inputs_outputs(tx)
+				t = threading.Thread(target=self.worker_thread, args=(tx_hashes,))
+				t.setDaemon(True)
+				t.start()
+
 				self.update_transactions(blockheader.height)
 			previous_block = current_block
-			blk = {}
-			blk['block-height'] = blockheader.height
-			self.db.add_block(blk)
+			self.db.add_block(blockheader.height)
 			time.sleep(5)
+
+
 
 def sync_all_accounts(threadName, delay):
 	db = Storage()
@@ -155,21 +172,17 @@ def sync_all_accounts(threadName, delay):
 			db.update_wallet(wallet.to_dict())
 	delta = (time.time() - start_time)
 	logger.info("DONE! syncing all wallets it took %s ", str(datetime.timedelta(seconds=delta)))
-
+'''
 try:
 	thread.start_new_thread(sync_all_accounts, ("Sync-wallet-thread", 2))
 except:
 	logger.info("Error: unable to start thread")
-
+'''
 
 app = BlockchainFetcher()
 app.catch_up()
 app.run()
 
-
-
-#daemon_runner = runner.DaemonRunner(app)
-#daemon_runner.do_action()
 
 '''
 account_json = json.loads(db.find_bitcoin_address("mxnEPXCb6NbPGtg3iFdjUHnuQag9RhUDPv"))
