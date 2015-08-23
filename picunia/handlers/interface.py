@@ -62,7 +62,7 @@ class KeyCreateHandler():
 		logger.debug("callback %s", wallet['wallet_index'])
 
 		if not self.db.add_wallet(wallet):
-			logger.debug("Wallet %s already exist, updating", wallet['wallet_index'])
+			logger.debug("Found dummy_wallet %s updating..", wallet['wallet_index'])
 			self.db.update_wallet(wallet)
 
 		self.has_been_called = True
