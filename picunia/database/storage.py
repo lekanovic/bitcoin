@@ -136,19 +136,23 @@ class Storage(object):
 		self.dbt.transaction.insert(transaction)
 
 	def find_last_block(self):
-		if self.db_blk.blockDB.count() == 0:
-			return None
+		res = self.db_blk.blockDB.find()
+		res = loads(dumps(res))
 
-		res = self.db_blk.blockDB.find().sort("block-height", -1).limit(1)
+		if not res:
+			return 0
+		else:
+			return res[0]["block-height"]
 
-		return loads(dumps(res))[0]["block-height"]
+	def add_block(self, block_height):
+		if type(block_height) == str:
+			block_height = int(block_height)
 
-	def add_block(self, block):
-		res = self.db_blk.blockDB.find_one({"block-height" : block["block-height"]})
-		if res == None:
-			self.db_blk.blockDB.insert(block)
-			return True
-		return False
+		self.db_blk.blockDB.drop()
+
+		blk = {}
+		blk['block-height'] = block_height
+		self.db_blk.blockDB.insert(blk)
 
 	def find_all_transactions(self, email):
 		sent = [loads(dumps(transaction)) for transaction in
@@ -236,6 +240,7 @@ doc2 = {
 		"public_key": "tpubDCVcrTzunZwuc67hSQHmjHN8efpCVw4aZDUqvztyryj8QDpsvjxipein85QKt3ZuWXGapnuYVBEUGyvAQMJBNpruqxqStQ5RdrLhRCzNtuc",
 		"date":  str( datetime.datetime.now() )
 		}
+
 '''
 db = Storage()
 a = db.find_all_transactions("hector.santos10@example.com")
