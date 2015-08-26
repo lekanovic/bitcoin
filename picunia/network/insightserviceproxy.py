@@ -127,6 +127,51 @@ class InsightServiceProxy():
             except URLError, e:
                 print e.reason, self.url
         return tx
+
+
+    def address_received(self, bitcoin_address):
+        status = None
+        for i in range(self.timeout):
+            try:
+                status = self.insight.address_received(bitcoin_address)
+                break
+            except HTTPError as err:
+                logger.info("No connection, retrying %s attempts %d" % (err.readline(), i))
+                time.sleep(1)
+                continue
+            except URLError, e:
+                print e.reason, self.url
+        return status
+
+    def address_sent(self, bitcoin_address):
+        status = None
+        for i in range(self.timeout):
+            try:
+                status = self.insight.address_sent(bitcoin_address)
+                break
+            except HTTPError as err:
+                logger.info("No connection, retrying %s attempts %d" % (err.readline(), i))
+                time.sleep(1)
+                continue
+            except URLError, e:
+                print e.reason, self.url
+        return status
+
+    def address_balance(self, bitcoin_address):
+        status = None
+        for i in range(self.timeout):
+            try:
+                status = self.insight.address_balance(bitcoin_address)
+                break
+            except HTTPError as err:
+                logger.info("No connection, retrying %s attempts %d" % (err.readline(), i))
+                time.sleep(1)
+                continue
+            except URLError, e:
+                print e.reason, self.url
+        return status
+
+
 '''
 import time
 start = time.time()
@@ -134,7 +179,11 @@ start = time.time()
 #insight = InsightServiceProxy(url='http://192.168.0.43:3001')
 insight = InsightServiceProxy()
 
+
 #Test valid address
+print insight.address_balance('n2eMqTT929pb1RDNuqEnxdaLau1rxy3efi')
+print insight.address_received('n2eMqTT929pb1RDNuqEnxdaLau1rxy3efi')
+print insight.address_sent('n2eMqTT929pb1RDNuqEnxdaLau1rxy3efi')
 print insight.is_address_used('n2eMqTT929pb1RDNuqEnxdaLau1rxy3efi')
 print insight.spendables_for_addresses(['n2eMqTT929pb1RDNuqEnxdaLau1rxy3efi'])
 print insight.has_unconfirmed_balance(['n2eMqTT929pb1RDNuqEnxdaLau1rxy3efi'])
