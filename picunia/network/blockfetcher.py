@@ -30,11 +30,6 @@ class BlockchainFetcher():
 		self.insight = InsightServiceProxy()
 		self.db = Storage()
 
-	def __update_balance(self, w, account):
-		if w.wallet_balance() != account['wallet_balance']:
-			logger.info("Old balance %d New balance %d", account['wallet_balance'], w.wallet_balance())
-			self.db.update_wallet(w.to_dict())
-
 	def check_inputs_outputs(self, tx):
 		if tx == None:
 			print "!!! THIS IS A TEMP FIX !!!"
@@ -43,19 +38,28 @@ class BlockchainFetcher():
 			btc_address = t1.bitcoin_address(Settings.NETCODE)
 			account, wallet = self.db.find_bitcoin_address(btc_address)
 			if account and wallet['public_key']:
-				logger.info("Sending bitcoins %s address %s" % (account['email'], btc_address))
-				key = wallet['public_key']
-				w = Wallet(key)
-				self.__update_balance(w, wallet)
+				w = Wallet.from_json(wallet)
+
+				total = self.insight.address_balance(btc_address)
+				logger.info("Sending %d SAT  %s address %s" % (total, account['email'], btc_address))				
+
+				w.update_balance(btc_address, total)
+				self.db.update_wallet(w.to_dict())
 
 		for t2 in tx.txs_out:
 			btc_address = t2.bitcoin_address(Settings.NETCODE)
 			account, wallet = self.db.find_bitcoin_address(btc_address)
 			if account and wallet['public_key']:
-				logger.info("Receiving bitcoins %s address %s" % (account['email'], btc_address))
-				key = wallet['public_key']
-				w = Wallet(key)
-				self.__update_balance(w, wallet)
+				w = Wallet.from_json(wallet)
+
+				total = 0
+				for s in self.insight.spendables_for_address(btc_address):
+					total += s.coin_value
+				logger.info("Receiving %d SAT %s address %s" % (total, account['email'], btc_address))					
+
+				w.update_balance(btc_address, total)
+				self.db.update_wallet(w.to_dict())
+
 
 	def update_transactions(self, block_height):
 		for unconf_tx in self.db.get_all_transactions():
@@ -152,7 +156,7 @@ class BlockchainFetcher():
 
 
 
-def sync_all_accounts(threadName, delay):
+def sync_all_wallets(threadName, delay):
 	db = Storage()
 	n = db.get_number_of_wallets()
 
@@ -172,15 +176,14 @@ def sync_all_accounts(threadName, delay):
 			db.update_wallet(wallet.to_dict())
 	delta = (time.time() - start_time)
 	logger.info("DONE! syncing all wallets it took %s ", str(datetime.timedelta(seconds=delta)))
-'''
-try:
-	thread.start_new_thread(sync_all_accounts, ("Sync-wallet-thread", 2))
-except:
-	logger.info("Error: unable to start thread")
-'''
+
+#t = threading.Thread(target=sync_all_wallets, args=("Sync-wallet-thread", 2))
+#t.setDaemon(True)
+#t.start()
+
 
 app = BlockchainFetcher()
-app.catch_up()
+#app.catch_up()
 app.run()
 
 

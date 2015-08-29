@@ -42,6 +42,7 @@ def create_account(name,lastname,email,password,reg_id):
 		dummy_wallet['date'] = ''
 		dummy_wallet['wallet_name'] = 'undefined'
 		dummy_wallet['spendable'] = []
+
 		return dummy_wallet
 
 	db = Storage()
@@ -175,28 +176,19 @@ def deactivate_account(email):
 		db.update_account(account)
 
 def pay_to_address(send_from, send_to, amount, msg="undefined"):
-	db = Storage()
+	def wallet_from_email(email):
+		db = Storage()
 
-	from_email = db.find_account(send_from)
-	to_email = db.find_account(send_to)
+		account = db.find_account(email)
 
-	wallet_index = to_email["wallets"][0]
+		wallet = db.find_wallet(account["wallets"][0])
 
-	wallet = db.find_wallet(wallet_index)
+		return Wallet.from_json(wallet)
 
-	key = wallet['public_key']
+	to_email_wallet = wallet_from_email(send_to)
+	from_email_wallet = wallet_from_email(send_to)
 
-	to_email_wallet = Wallet(key)
 	bitcoin_address = to_email_wallet.get_bitcoin_address()
-
-	wallet_index = from_email["wallets"][0]
-
-	wallet = db.find_wallet(wallet_index)
-	print "Wallet balance %d" % wallet['wallet_balance']
-
-	key = wallet['public_key']
-
-	from_email_wallet = Wallet(key)
 
 	try:
 		tx_unsigned, keylist = from_email_wallet.pay_to_address(bitcoin_address, amount)
@@ -228,11 +220,10 @@ def pay_to_address(send_from, send_to, amount, msg="undefined"):
 	return th
 
 def multisig_transacion(from_email, to_email, escrow_email, amount, msg="undefined"):
-	def create_user_info(email, wallet_index, key_index):
+	def create_user_info(email, wallet_index):
 		user = {}
 		user['email'] = email
 		user['wallet_index'] = wallet_index
-		user['key_index'] = key_index
 		user['signed'] = 'no'
 		return user
 
@@ -247,9 +238,9 @@ def multisig_transacion(from_email, to_email, escrow_email, amount, msg="undefin
 	receiver_wallet = db.find_wallet(receiver["wallets"][0])
 	escrow_wallet = db.find_wallet(escrow["wallets"][0])
 
-	sender_wallet = Wallet(sender_wallet['public_key'])
-	receiver_wallet = Wallet(receiver_wallet['public_key'])
-	escrow_wallet = Wallet(escrow_wallet['public_key'])
+	sender_wallet = Wallet.from_json(sender_wallet)
+	receiver_wallet = Wallet.from_json(receiver_wallet)
+	escrow_wallet = Wallet.from_json(escrow_wallet)
 
 	keys = []
 	keys.append(sender_wallet.get_key())
@@ -261,16 +252,13 @@ def multisig_transacion(from_email, to_email, escrow_email, amount, msg="undefin
 	tx_info={}
 
 	tx_info['from'] = create_user_info(from_email,
-										sender_wallet.wallet_index,
-										sender_wallet.index)
+										sender_wallet.wallet_index)
 
 	tx_info['to_email'] = create_user_info(to_email,
-											receiver_wallet.wallet_index,
-											receiver_wallet.index)
+											receiver_wallet.wallet_index)
 
 	tx_info['escrow'] = create_user_info(escrow_email,
-										escrow_wallet.wallet_index,
-										escrow_wallet.index)
+										escrow_wallet.wallet_index)
 
 	tx_info['amount'] = amount
 	tx_info['confirmations'] = -1
@@ -308,7 +296,7 @@ def write_blockchain_message(email, message):
 
 	wallet = db.find_wallet(wallet_index)
 
-	sender = Wallet(wallet['public_key'])
+	sender = Wallet.from_json(wallet)
 
 	try:
 		tx_unsigned, keylist, address = sender.proof_of_existens(message)

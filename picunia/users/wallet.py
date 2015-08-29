@@ -33,28 +33,52 @@ class InsufficientFunds(Exception):
 
 class Wallet():
 
-	def __init__(self, bip32node, name="undefined"):
+	def __init__(self, bip32node, name="undefined", create_new_object=True):
 
 		bip32node = BIP32Node.from_text(bip32node)
 		self.subkeys = []
-		self.wallet_name = name
-		self.index = 0
-		self.network = Settings.NETWORK
-		self.netcode = Settings.NETCODE
 		self.insight = InsightServiceProxy()
 		self.wallet_index, self.key_external,  self.key_change = self.get_key_info(bip32node)
 		self.public_key = bip32node.wallet_key(as_private=False)
-		self.GAP_LIMIT = Settings.GAP_LIMIT
-		self.wallet_created = str( datetime.datetime.now() )
-		self.tx_info = {}
+
+		# Dont update this if called from: from_json
+		if create_new_object:
+			self.spendable = []
+			self.status = u'active'
+			self.date_updated = self.wallet_created = str( datetime.datetime.now() )
+			self.wallet_name = name
+			self.spendable = self.__generate_initial_keys()
+
+		public_addresses =  [ a[u'public_address'] for a in self.spendable]
+		public_addresses.pop() # remove change address
+		self.subkeys.extend(public_addresses)
+
 		self.discovery()
 
 	@classmethod
 	def from_json(cls, json):
-		cls.status = json['status']
-		cls.account_created = json['date']
+		cls.status = json[u'status']
+		cls.wallet_created = json[u'date']
+		cls.wallet_name = json[u'wallet_name']
+		cls.spendable = json[u'spendable']
+		cls.balance = json[u'wallet_balance']
+		cls.date_updated = str( datetime.datetime.now() )
 
-		return cls(json['public_key'])
+		return cls(json[u'public_key'], create_new_object=False)
+
+	def __generate_initial_keys(self):
+		d = {}
+		key_amount = []
+
+		d[u'public_address'] = self.get_key(0).address()
+		d[u'amount'] = 0
+		key_amount.append(d)
+
+		d = {}
+		d[u'public_address'] = self.key_change.address()
+		d[u'amount'] = 0
+		key_amount.append(d)
+		return key_amount
 
 	def get_key_info(self, bip32node):
 		child_number = bip32node.child_index()
@@ -81,9 +105,20 @@ class Wallet():
 
 	def get_key(self, index=-1):
 		if index == -1:
-			return self.key_external.subkey_for_path(str(self.index))
+			index_of_last_address = len(self.subkeys)
+			return self.key_external.subkey_for_path(str(index_of_last_address))
 		else:
 			return self.key_external.subkey_for_path(str(index))
+
+	def update_balance(self, address, balance):
+		if type(address) != unicode or type(balance) != int:
+			raise ValueError("Wrong type address %s balance %s" % (type(address),type(balance) ))
+
+		for a in self.spendable:
+			if a[u'public_address'] == address:
+				print "Hittade %s updaterar %d" % (address, balance)
+				a[u'amount'] = balance
+				self.date_updated = str( datetime.datetime.now() )
 
 	def __next_address(self, i):
 		index = 0
@@ -113,34 +148,60 @@ class Wallet():
 		"""
 		tmp = []
 
-		for i in range(index,index + self.GAP_LIMIT):
+		for i in range(index,index + Settings.GAP_LIMIT):
 			key = self.__next_address(i)
 			tmp.append(key)
 
 			if self.insight.is_address_used(key):
-				self.index += self.GAP_LIMIT
 				self.subkeys.extend(tmp)
 				return True
 
 		return False
 
 	def discovery(self):
-		while True:
-			key = self.__next_address(self.index)
+
+		index_of_last_address = len(self.subkeys) - 1
+		key = self.__next_address(index_of_last_address)
+
+		print "key", key
+		while self.insight.is_address_used(key):
+			index_of_last_address += 1
+			key = self.__next_address(index_of_last_address)
+			print "key", key
 			self.subkeys.append(key)
 
-			if not self.insight.is_address_used(key):
-				if not self.__check_gap(self.index):
-					self.index += 1
-					break
-			self.index += 1
+		key_amount=[]
+		amount=0
+
+		public_addresses = [a['public_address'] for a in self.spendable]
+
+		for s in self.__get_all_keys():
+			d={}
+			if s in public_addresses:
+				print "hittade",s
+				continue
+			spendable = self.insight.spendables_for_address(s)
+			amount=0
+
+			for a in spendable:
+				amount += a.coin_value
+
+			print s, amount
+			d[u'public_address'] = s
+			d[u'amount'] = amount
+			key_amount.append(d)
+
+		for x in key_amount:
+			self.spendable.insert(-1,x)#Add change address last
+
+	def print_keys(self, howmany=7):
+		for i in range(0, howmany):
+			addr = self.__next_address(i)
+			print "%d %s %d" % (i, addr, self.insight.address_balance(addr))
+		print "change key:", self.key_change.address()
 
 	def wallet_balance(self):
-		total = 0
-		# Check the wallet for spendables
-		for s in self.insight.spendables_for_addresses(self.__get_all_keys()):
-			total += s.coin_value
-		return total
+		return sum([a['amount'] for a in self.spendable])
 
 	def wallet_info(self):
 		balance = self.wallet_balance()
@@ -151,33 +212,22 @@ class Wallet():
 		for k in self.subkeys:
 			print "%s" % (k)
 
-	def to_json(self):
-		return json.dumps(self.to_dict())
+	def to_json(self, nice=False):
+		if nice:
+			return json.dumps(self.to_dict(),indent=4, separators=(',', ': '))
+		else:
+			return json.dumps(self.to_dict())
 
 	def to_dict(self):
-		balance = self.wallet_balance()
-
-		key_amount=[]
-		amount=0
-
-		for s in self.__get_all_keys():
-			d={}
-			spendable = self.insight.spendables_for_address(s)
-			amount=0
-			for a in spendable:
-				amount += a.coin_value
-			d['public_address'] = s
-			d['amount'] = amount
-			key_amount.append(d)
-
 		wallet = {}
-		wallet["wallet_index"] = self.wallet_index
-		wallet["wallet_balance"] = balance
-		wallet["wallet_name"] = self.wallet_name
-		wallet["status"] = "active"
-		wallet["public_key"] = self.public_key
-		wallet["date"] = self.wallet_created
-		wallet["spendable"] = key_amount
+		wallet[u"wallet_index"] = self.wallet_index
+		wallet[u"wallet_balance"] = self.wallet_balance()
+		wallet[u"wallet_name"] = self.wallet_name
+		wallet[u"status"] = self.status
+		wallet[u"public_key"] = self.public_key
+		wallet[u"date"] = self.wallet_created
+		wallet[u"spendable"] = self.spendable
+		wallet[u"date_updated"] = self.date_updated
 
 		return wallet
 
@@ -213,7 +263,8 @@ class Wallet():
 
 	def __get_address_index(self, bitcoin_address):
 		i = 0
-		while i <= self.index:
+		length = len(self.subkeys)
+		while i <= length:
 			addr = self.__next_address(i)
 			if addr == bitcoin_address:
 				return i
@@ -351,7 +402,7 @@ class Wallet():
 		logger.debug("TxIn %s", tx_in.bitcoin_address())
 		script = script.script()
 
-		address = address_for_pay_to_script(script, self.netcode)
+		address = address_for_pay_to_script(script, Settings.NETCODE)
 		logger.debug("Multisig address: %s", address)
 
 		tx_out = TxOut(10000, script)
