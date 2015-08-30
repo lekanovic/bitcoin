@@ -176,7 +176,7 @@ def deactivate_account(email):
 		db.update_account(account)
 
 def pay_to_address(send_from, send_to, amount, msg="undefined"):
-	def wallet_from_email(email):
+	def get_wallet(email):
 		db = Storage()
 
 		account = db.find_account(email)
@@ -185,8 +185,8 @@ def pay_to_address(send_from, send_to, amount, msg="undefined"):
 
 		return Wallet.from_json(wallet)
 
-	to_email_wallet = wallet_from_email(send_to)
-	from_email_wallet = wallet_from_email(send_to)
+	from_email_wallet = get_wallet(send_from)
+	to_email_wallet = get_wallet(send_to)
 
 	bitcoin_address = to_email_wallet.get_bitcoin_address()
 
