@@ -6,7 +6,7 @@ class Settings():
 	INSIGHT_ADDRESS = 'http://localhost:3001'
 	GAP_LIMIT = 5
 	NETWORK = 'testnet'
-	USE_RPI_EMULATOR = True
+	USE_RPI_EMULATOR = False
 	RSCODEC_NSYM = 64
 	USE_COMPRESSION = True
 	BAUD_MINIMODEM = '3000'
