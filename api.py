@@ -122,6 +122,17 @@ def find_account_with_balance():
 			return account, wallet['wallet_balance']
 	return {}, -1
 
+def find_random_account():
+	def find_random_account(db):
+		number_of_accounts = db.get_number_of_accounts()
+		rnd = str(random.randrange(0, number_of_accounts))
+		return db.find_account_index(int(rnd))
+	db = Storage()
+	account = find_random_account(db)
+	wallet = db.find_wallet(account['wallets'][0])
+
+	return account, wallet['wallet_balance']
+
 def fetch_account(email):
 	def fetch_wallets(email):
 		db = Storage()

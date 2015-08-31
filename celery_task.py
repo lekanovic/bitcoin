@@ -54,6 +54,16 @@ def find_account_with_balance_rpc():
 	return json.dumps(d)
 
 @app.task
+def find_random_account_rpc():
+	account, balance = find_random_account()
+
+	d = {}
+	d['email'] = account['email']
+	d['balance'] = balance
+	d['wallet_index'] = 0 #We only support one wallet
+	return json.dumps(d)
+
+@app.task
 def pay_to_address_rpc(send_from, send_to, amount, msg):
 	print send_from, send_to, amount, msg
 	lock = LockFile(signservice)
