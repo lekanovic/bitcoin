@@ -37,11 +37,16 @@ class BlockchainFetcher():
 		for t1 in tx.txs_in:
 			btc_address = t1.bitcoin_address(Settings.NETCODE)
 			account, wallet = self.db.find_bitcoin_address(btc_address)
+
 			if account and wallet['public_key']:
 				w = Wallet.from_json(wallet)
 
-				total = self.insight.address_balance(btc_address)
-				logger.info("Sending %d SAT  %s address %s" % (total, account['email'], btc_address))				
+				if self.insight.has_unconfirmed_balance([btc_address]):
+					total = self.insight.address_unconfirmed_balance(btc_address)
+				else:
+					total = self.insight.address_balance(btc_address)
+
+				logger.info("Sending %d SAT from %s address %s" % (total, account['email'], btc_address))
 
 				w.update_balance(btc_address, total)
 				self.db.update_wallet(w.to_dict())
@@ -52,10 +57,8 @@ class BlockchainFetcher():
 			if account and wallet['public_key']:
 				w = Wallet.from_json(wallet)
 
-				total = 0
-				for s in self.insight.spendables_for_address(btc_address):
-					total += s.coin_value
-				logger.info("Receiving %d SAT %s address %s" % (total, account['email'], btc_address))					
+				total = t2.coin_value
+				logger.info("Receiving %d SAT %s to address %s" % (total, account['email'], btc_address))
 
 				w.update_balance(btc_address, total)
 				self.db.update_wallet(w.to_dict())
@@ -143,7 +146,7 @@ class BlockchainFetcher():
 			current_block = b2h_rev(tip_hash)
 			if current_block != previous_block: # A new block has been accepted in the blockchain
 				blockheader, tx_hashes = self.insight.get_blockheader_with_transaction_hashes(tip_hash)
-				logger.info(blockheader.height)
+				logger.info("Block: [%d] %s" %(blockheader.height, str(datetime.datetime.now())))
 
 				t = threading.Thread(target=self.worker_thread, args=(tx_hashes,))
 				t.setDaemon(True)
@@ -169,11 +172,9 @@ def sync_all_wallets(threadName, delay):
 		if not key: # Make sure this is not a dummy wallet
 			continue
 
-		wallet = Wallet(key)
+		wallet = Wallet.from_json(w)
+		wallet.sync_wallet()
 
-		if wallet.wallet_balance() != w['wallet_balance']:
-			logger.info("Old balance %d New balance %d", w['wallet_balance'], wallet.wallet_balance())
-			db.update_wallet(wallet.to_dict())
 	delta = (time.time() - start_time)
 	logger.info("DONE! syncing all wallets it took %s ", str(datetime.timedelta(seconds=delta)))
 
