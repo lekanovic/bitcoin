@@ -30,6 +30,14 @@ class BlockchainFetcher():
 		self.insight = InsightServiceProxy()
 		self.db = Storage()
 
+	def get_balance(self, btc_address):
+		total = 0
+		if self.insight.has_unconfirmed_balance([btc_address]):
+			total = self.insight.address_unconfirmed_balance(btc_address)
+		else:
+			total = self.insight.address_balance(btc_address)
+		return total
+
 	def check_inputs_outputs(self, tx):
 		if tx == None:
 			print "!!! THIS IS A TEMP FIX !!!"
@@ -41,10 +49,7 @@ class BlockchainFetcher():
 			if account and wallet['public_key']:
 				w = Wallet.from_json(wallet)
 
-				if self.insight.has_unconfirmed_balance([btc_address]):
-					total = self.insight.address_unconfirmed_balance(btc_address)
-				else:
-					total = self.insight.address_balance(btc_address)
+				total = self.get_balance(btc_address)
 
 				logger.info("Sending %d SAT from %s address %s" % (total, account['email'], btc_address))
 
@@ -57,7 +62,8 @@ class BlockchainFetcher():
 			if account and wallet['public_key']:
 				w = Wallet.from_json(wallet)
 
-				total = t2.coin_value
+				total = self.get_balance(btc_address)
+
 				logger.info("Receiving %d SAT %s to address %s" % (total, account['email'], btc_address))
 
 				w.update_balance(btc_address, total)
