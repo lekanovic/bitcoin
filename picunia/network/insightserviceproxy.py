@@ -171,6 +171,20 @@ class InsightServiceProxy():
                 print e.reason, self.url
         return status
 
+    def address_unconfirmed_balance(self, bitcoin_address):
+        status = None
+        for i in range(self.timeout):
+            try:
+                status = self.insight.address_unconfirmed_balance(bitcoin_address)
+                break
+            except HTTPError as err:
+                logger.info("No connection, retrying %s attempts %d" % (err.readline(), i))
+                time.sleep(1)
+                continue
+            except URLError, e:
+                print e.reason, self.url
+        return status
+
 
 '''
 import time
@@ -178,7 +192,7 @@ start = time.time()
 
 #insight = InsightServiceProxy(url='http://192.168.0.43:3001')
 insight = InsightServiceProxy()
-
+print insight.address_unconfirmed_balance('mnzBUYj8Smd3Q9GcbyeENFhKSyvMqbPGcb')
 
 #Test valid address
 print insight.address_balance('n2eMqTT929pb1RDNuqEnxdaLau1rxy3efi')
