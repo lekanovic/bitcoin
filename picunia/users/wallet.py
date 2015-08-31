@@ -116,7 +116,7 @@ class Wallet():
 
 		for a in self.spendable:
 			if a[u'public_address'] == address:
-				print "Hittade %s updaterar %d" % (address, balance)
+				logger.debug("Updating %s with %d SAT" % (address, balance))
 				a[u'amount'] = balance
 				self.date_updated = str( datetime.datetime.now() )
 
@@ -163,11 +163,9 @@ class Wallet():
 		index_of_last_address = len(self.subkeys) - 1
 		key = self.__next_address(index_of_last_address)
 
-		print "key", key
 		while self.insight.is_address_used(key):
 			index_of_last_address += 1
 			key = self.__next_address(index_of_last_address)
-			print "key", key
 			self.subkeys.append(key)
 
 		key_amount=[]
@@ -178,7 +176,6 @@ class Wallet():
 		for s in self.__get_all_keys():
 			d={}
 			if s in public_addresses:
-				print "hittade",s
 				continue
 			spendable = self.insight.spendables_for_address(s)
 			amount=0
@@ -186,7 +183,6 @@ class Wallet():
 			for a in spendable:
 				amount += a.coin_value
 
-			print s, amount
 			d[u'public_address'] = s
 			d[u'amount'] = amount
 			key_amount.append(d)
@@ -230,6 +226,16 @@ class Wallet():
 		wallet[u"date_updated"] = self.date_updated
 
 		return wallet
+
+	def sync_wallet(self):
+		i = 0
+		for addr in self.__get_all_keys():
+			balance = self.insight.address_balance(addr)
+			if balance != self.spendable[i]['amount']:
+				msg = "WARN! %s object balance %d real balance %d" % (addr, self.spendable[i]['amount'], balance)
+				logger.info(msg)
+				self.update_balance(addr, balance)
+			i = i + 1
 
 	def __get_all_keys(self):
 		# Get all of the key's in wallet. But don't forget the change key
