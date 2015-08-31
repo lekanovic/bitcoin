@@ -116,7 +116,7 @@ class Wallet():
 
 		for a in self.spendable:
 			if a[u'public_address'] == address:
-				logger.debug("Updating %s with %d SAT" % (address, balance))
+				logger.debug("Updating %s with %d SAT prev balance %d SAT" % (address, balance, a[u'amount']))
 				a[u'amount'] = balance
 				self.date_updated = str( datetime.datetime.now() )
 
