@@ -39,9 +39,6 @@ class BlockchainFetcher():
 		return total
 
 	def check_inputs_outputs(self, tx):
-		if tx == None:
-			print "!!! THIS IS A TEMP FIX !!!"
-			return
 		for t1 in tx.txs_in:
 			btc_address = t1.bitcoin_address(Settings.NETCODE)
 			account, wallet = self.db.find_bitcoin_address(btc_address)
