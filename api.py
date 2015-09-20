@@ -27,6 +27,9 @@ def log_in(email, password):
 	db = Storage()
 	account = db.find_account(email)
 
+	if account == None:
+		return False
+
 	hashed = account['password'].encode('utf-8')
 	password = password.encode('utf-8')
 
