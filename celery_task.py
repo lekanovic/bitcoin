@@ -22,6 +22,12 @@ def validate_passwd_rpc(email, password):
 @app.task
 def create_account_rpc(name,lastname,email,password,reg_id):
 	print name,lastname,email,password
+	resp = {}
+	resp['type'] = 'CREATE_ACCOUNT'
+	resp['email'] = email
+	resp['name'] = name
+	resp['lastname'] = lastname
+
 	lock = LockFile(signservice)
 	lock.acquire()
 
@@ -29,14 +35,15 @@ def create_account_rpc(name,lastname,email,password,reg_id):
 		key_handler = create_account(name,lastname,email,password.encode('utf-8'),reg_id)
 	except AccountExistException as e:
 		lock.release()
-		return "FAILED: ACCOUNT '%s' ALREADY EXISTS!" % e.message
+		resp['status'] = 'FAILED %s' % e.message
+		return resp
 
 	while not key_handler.has_been_called:
 		time.sleep(0.5)
 
 	lock.release()
 
-	return "Account %s created" % (email)
+	return resp
 
 @app.task
 def fetch_account_rpc(email):
@@ -66,6 +73,13 @@ def find_random_account_rpc():
 @app.task
 def pay_to_address_rpc(send_from, send_to, amount, msg):
 	print send_from, send_to, amount, msg
+	resp = {}
+	resp['type'] = 'STANDARD'
+	resp['from'] = send_from
+	resp['to'] = send_to
+	resp['amount'] = amount
+	resp['message'] = msg
+
 	lock = LockFile(signservice)
 	lock.acquire()
 
@@ -73,21 +87,33 @@ def pay_to_address_rpc(send_from, send_to, amount, msg):
 		transaction_handler = pay_to_address(send_from, send_to, amount, msg=msg)
 	except InsufficientFunds as e:
 		lock.release()
-		return "TRANSACTION FAILED! %s" % e.message
+		resp['status'] = 'FAILED %s' % e.message
+		return resp
 	except UnconfirmedAddress as e:
 		lock.release()
-		return "TRANSACTION FAILED! %s" % e.message
+		resp['status'] = 'FAILED %s' % e.message
+		return resp
 
 	while not transaction_handler.has_been_called:
 		time.sleep(0.5)
 
 	lock.release()
 
-	return "STANDARD transaction %s created" % (transaction_handler.tx_info['tx_id'])
+	resp['tx_id'] = transaction_handler.tx_info['tx_id']
+
+	return resp
 
 @app.task
 def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 	print from_email, to_email, escrow_email, amount, msg
+	resp = {}
+	resp['type'] = 'MULTISIG'
+	resp['from'] = from_email
+	resp['to'] = to_email
+	respo['escrow'] = escrow_email
+	resp['amount'] = amount
+	resp['message'] = msg
+
 	lock = LockFile(signservice)
 	lock.acquire()
 
@@ -95,21 +121,31 @@ def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 		transaction_handler = multisig_transacion(from_email, to_email, escrow_email, amount, msg=msg)
 	except InsufficientFunds as e:
 		lock.release()
-		return "TRANSACTION FAILED! %s" % e.message
+		resp['status'] = 'FAILED %s' % e.message
+		return resp
 	except UnconfirmedAddress as e:
 		lock.release()
-		return "TRANSACTION FAILED! %s" % e.message
+		resp['status'] = 'FAILED %s' % e.message
+		return resp
 
 	while not transaction_handler.has_been_called:
 		time.sleep(0.5)
 
 	lock.release()
 
-	return "MULTISIG transaction %s created" % (transaction_handler.tx_info['tx_id'])
+	resp['tx_id'] = transaction_handler.tx_info['tx_id']
+
+	return resp
 
 @app.task
 def write_blockchain_message_rpc(email, message):
 	print email, message
+	resp = {}
+	resp['status'] = 'SUCCESS'
+	resp['type'] = 'BLKCHN_MESSAGE'
+	resp['from'] = email
+	resp['message'] = message
+
 	lock = LockFile(signservice)
 	lock.acquire()
 
@@ -117,17 +153,21 @@ def write_blockchain_message_rpc(email, message):
 		transaction_handler = write_blockchain_message(email, message)
 	except InsufficientFunds as e:
 		lock.release()
-		return "TRANSACTION FAILED! %s" % e.message
+		resp['status'] = 'FAILED %s' % e.message
+		return resp
 	except UnconfirmedAddress as e:
 		lock.release()
-		return "TRANSACTION FAILED! %s" % e.message
+		resp['status'] = 'FAILED %s' % e.message
+		return resp
 
 	while not transaction_handler.has_been_called:
 		time.sleep(0.5)
 
 	lock.release()
 
-	return "BLKCHN_MESSAGE transaction %s created" % (transaction_handler.tx_info['tx_id'])
+	resp['tx_id'] = transaction_handler.tx_info['tx_id']
+
+	return resp
 
 @app.task
 def fetch_transaction_by_email_rpc(email):
