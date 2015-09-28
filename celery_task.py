@@ -99,6 +99,10 @@ def pay_to_address_rpc(send_from, send_to, amount, msg):
 
 	lock.release()
 
+	if transaction_handler.has_error:
+		resp['status'] = 'FAILED %s' % transaction_handler.error_message
+		return resp
+
 	resp['tx_id'] = transaction_handler.tx_info['tx_id']
 
 	return resp
@@ -133,6 +137,10 @@ def multisig_transacion_rpc(from_email, to_email, escrow_email, amount, msg):
 
 	lock.release()
 
+	if transaction_handler.has_error:
+		resp['status'] = 'FAILED %s' % transaction_handler.error_message
+		return resp
+
 	resp['tx_id'] = transaction_handler.tx_info['tx_id']
 
 	return resp
@@ -164,6 +172,10 @@ def write_blockchain_message_rpc(email, message):
 		time.sleep(0.5)
 
 	lock.release()
+
+	if transaction_handler.has_error:
+		resp['status'] = 'FAILED %s' % transaction_handler.error_message
+		return resp
 
 	resp['tx_id'] = transaction_handler.tx_info['tx_id']
 

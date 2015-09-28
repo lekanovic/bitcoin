@@ -18,6 +18,8 @@ class TransactionHandler():
 		self.tx_info = tx_info
 		self.insight = InsightService(Settings.INSIGHT_ADDRESS)
 		self.has_been_called = False
+		self.has_error = False
+		self.error_message = ""
 
 	def callback(self, tx_hex):
 		logger.debug("Transaction size %d signed %s", len(tx_hex), tx_hex)
@@ -36,10 +38,15 @@ class TransactionHandler():
 
 		try:
 			ret = self.insight.send_tx(tx)
-		except urllib2.HTTPError as ex:
-			logger.info("Transaction could not be sent")
+		except urllib2.HTTPError as e:
+			logger.info(e)
+			self.has_error = True
+			self.error_message = e
 		except ValueError as e:
 			logger.info(e)
+			self.has_error = True
+			self.error_message = e
+
 
 		self.has_been_called = True
 		try:
