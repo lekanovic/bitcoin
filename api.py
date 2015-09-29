@@ -3,6 +3,7 @@ from picunia.users.wallet import Wallet, InsufficientFunds, UnconfirmedAddress
 from picunia.config.settings import Settings
 from picunia.handlers.interface import TransactionHandler, KeyCreateHandler
 from picunia.security.crypt.utils import encrypt_password, validate_password
+from picunia.network.gcm_sender import send_to_device
 from random import randint
 import random
 import json
@@ -341,6 +342,36 @@ def write_blockchain_message(email, message):
 
 	return th
 
+def request_payment(gcm_api_key, requester, request_from, amount, message):
+	db = Storage()
+
+	account = db.find_account(requester)
+
+	requester_info = {}
+	requester_info['name'] = account['name']
+	requester_info['lastname'] = account['lastname']
+	requester_info['email'] = account['email']
+
+	msg = {}
+	msg['type'] = 'REQUEST'
+	msg['amount'] = amount
+	msg['from'] = [requester_info]
+	msg['message'] = message
+
+	string_message = json.dumps(msg)
+
+	account = db.find_account(request_from)
+
+	if not send_to_device(gcm_api_key, string_message, account['reg_id']):
+		response = {}
+		response['status'] = 'FAILED to send to %s NotRegistered or InvalidRegistration' % account['reg_id']
+		return response
+
+	response = {}
+	response['status'] = 'Pending'
+	response['message'] = 'Sending request to %s for amount %d' % (args['request_from'], args['amount']) 
+
+	return response
 '''
 db = Storage()
 
