@@ -182,6 +182,12 @@ def write_blockchain_message_rpc(email, message):
 	return resp
 
 @app.task
+def request_payment_rpc(gcm_api_key, requester, request_from, amount, msg):
+	resp = request_payment(gcm_api_key, requester, request_from, amount, msg)
+
+	return resp
+
+@app.task
 def fetch_transaction_by_email_rpc(email):
 	d = fetch_transactions_by_email(email)
 
