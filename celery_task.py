@@ -51,6 +51,11 @@ def fetch_account_rpc(email):
 	return a
 
 @app.task
+def fetch_account_regid_rpc(email):
+	a = fetch_account_regid(email)
+	return a
+
+@app.task
 def find_account_with_balance_rpc():
 	account, balance = find_account_with_balance()
 

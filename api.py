@@ -159,6 +159,15 @@ def fetch_account(email):
 
 	return account
 
+def fetch_account_regid(email):
+	resp = {}
+	db = Storage()
+	account = db.find_account(email)
+	if not account:
+		return {}
+	resp[u'reg_id'] = account['reg_id']
+	return resp
+
 def fetch_transactions_by_email(email):
 	db = Storage()
 	txs = db.find_all_transactions(email)
