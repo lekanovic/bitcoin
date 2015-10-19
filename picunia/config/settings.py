@@ -14,6 +14,7 @@ class Settings():
 	WIFS_DB = 'wifs.db'
 	KEYS_DB = 'key.db'
 	SEED_FILE = 'masterseed'
+	OPENASSET_SERVER = 'http://localhost:8080/'
 
 	if NETWORK == 'testnet':
 		NETCODE = 'XTN'
