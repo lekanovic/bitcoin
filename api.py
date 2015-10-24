@@ -381,7 +381,57 @@ def request_payment(gcm_api_key, requester, request_from, amount, message):
 	response['message'] = 'Sending request to %s for amount %d' % (args['request_from'], args['amount']) 
 
 	return response
+
+def issueasset_wallet(email, amount, metadata='', fees=10000):
+	def get_wallet(email):
+		db = Storage()
+
+		account = db.find_account(email)
+
+		wallet = db.find_wallet(account["wallets"][0])
+
+		return Wallet.from_json(wallet)
+
+	token_issuer = get_wallet(email)
+
+	try:
+		tx_unsigned, keylist, asset_list = token_issuer.issueasset(amount, metadata=metadata, fees=fees)
+	except InsufficientFunds as e:
+		raise
+	except UnconfirmedAddress as e:
+		raise
+
+	tx_info={}
+	tx_info['owner'] = email
+	tx_info['amount'] = 600 #Dust for assets
+	tx_info['confirmations'] = -1
+	tx_info['date'] = str( datetime.datetime.now() )
+	tx_info['block'] = -1
+	tx_info['type'] = "ISSUEASSET"
+	tx_info['message'] = ''
+
+	tx_info['openasset'] = asset_list
+
+	start_service()
+
+	th = TransactionHandler(tx_info)
+
+	sign_tx(int(token_issuer.wallet_index),
+			keylist,
+			tx_unsigned.as_hex(include_unspents=True),
+			cb=th.callback)
+
+	return th
+
 '''
+transaction_handler = pay_to_address('lekanovic@gmail.com', 'popjull@teleworm.us', 10000)
+
+transaction_handler = issueasset_wallet('popjull@teleworm.us', 10, metadata='http://goo.gl/s34sd')
+
+while not transaction_handler.has_been_called:
+	time.sleep(0.5)
+print transaction_handler.tx_info
+
 db = Storage()
 
 import time

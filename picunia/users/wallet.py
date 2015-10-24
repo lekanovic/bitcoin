@@ -6,11 +6,13 @@ from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
 from pycoin.tx.pay_to import address_for_pay_to_script, ScriptMultisig
 from pycoin.tx.TxIn import TxIn
+from pycoin.tx.Spendable import Spendable
 from pycoin.tx.tx_utils import distribute_from_split_pool
 from pycoin.convention import tx_fee
 from picunia.collection.proof import ProofOfExistence
 from picunia.config.settings import Settings
 from picunia.database.storage import Storage
+from picunia.openasset.utils import oa_issueasset, oa_listunspent, oa_getbalance
 import datetime
 import md5
 import json
@@ -418,9 +420,62 @@ class Wallet():
 
 		return tx1, address
 
+	def issueasset(self, amount, metadata='', fees=0):
+		bitcoin_address=None
+		key_index=0
+
+		for idx, addr in enumerate(self.spendable):
+			if addr['amount'] >= (600 + fees):
+				bitcoin_address = addr['public_address']
+				key_index = idx
+				break
+
+		spendables = self.insight.spendables_for_address(bitcoin_address)
+
+		tx_unsigned = oa_issueasset(bitcoin_address,
+									amount,
+									to=None,
+									metadata=metadata,
+									fees=fees,
+									txformat='raw')
+
+		tx = Tx.tx_from_hex(tx_unsigned[1:-1])
+
+		unspents = []
+		for txin in tx.txs_in:
+			for s in spendables:
+				if txin.previous_hash == s.tx_hash and txin.previous_index == s.tx_out_index:
+
+					sp = Spendable(s.coin_value,
+									s.script,
+									txin.previous_hash,
+									txin.previous_index)
+					unspents.append(sp)
+
+		tx.set_unspents(unspents)
+
+		assets = oa_listunspent(bitcoin_address)
+
+		asset_list = []
+		for a in assets:
+			if a['asset_id'] != None:
+				item = {}
+				item['asset_id'] = a['asset_id']
+				item['asset_quantity'] = a['asset_quantity']
+				item['oa_address'] = a['oa_address']
+				item['address'] = a['address']
+				asset_list.append(item)
+
+		logger.debug("Transaction fee %d", tx.fee())
+		t = tx.as_hex(include_unspents=True)
+		logger.debug(t)
+		logger.debug("Transaction size %d unsigned", len(t))
+
+		return tx, [key_index], asset_list
+
 
 '''
-pub = 'tpubDCVcrTzunZwudiYHyQ21fvpUpUTPh1vUm9Z633hGwAzacBYoNpjv4NJpwV3A8avhWpnyTpWhKypLwaEEfta5SvnhEraGtobeUyEaWsbBKSy'
+pub = 'tpubDCwC9yxc8Bmz6hwtQ1EABBFfZsGYXq341HapWR5BSAMPppQTHKfaE3DBo6SpauMAF56dJdxXzqhtkhR7g7fBQK4cmSFa3JhnGvTnpr2BAWt'
 w = Wallet(pub)
 
 print "wallet index %s" % w.wallet_index
@@ -428,8 +483,7 @@ print "key index %d" % w.index
 print "wallet ballance %d" % w.wallet_balance()
 print w.wallet_info()
 
-tx, key_indexes = w.pay_to_address('myw6VGNg5uB52p1RWYc6BTbZzwrGo5tEgC',5000)
-
+tx, key_indexes = w.pay_to_address('moRFkYXeu8vjVoH4HpxvmSZf7MbYbUuuNR',5000)
 
 for k in key_indexes:
 	print k

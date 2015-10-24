@@ -24,7 +24,7 @@ def send_request(operation, payload):
 		logger.exception(e)
 	return res.text
 
-def oa_issueasset(address, amount, to=None, metadata='', fees=None):
+def oa_issueasset(address, amount, to=None, metadata='', fees=None, txformat='raw'):
 	'''
 	Creates a transaction for issuing an asset.
 	'''
@@ -33,7 +33,7 @@ def oa_issueasset(address, amount, to=None, metadata='', fees=None):
 				'to': to,
 				'metadata': metadata,
 				'fees': fees,
-				'txformat': 'raw',
+				'txformat': txformat,
 				'mode': 'unsigned'}
 	res = send_request("issueasset", payload)
 
@@ -67,7 +67,7 @@ def oa_getbalance(address, minconf='1', maxconf='9999999'):
 	#Return a list with balance info json
 	return json.loads(res)
 
-def oa_sendasset(address, asset, amount, to, fees=None):
+def oa_sendasset(address, asset, amount, to, fees=None, txformat='raw'):
 	'''
 	Creates a transaction for sending an asset from an
 	address to another.
@@ -77,7 +77,7 @@ def oa_sendasset(address, asset, amount, to, fees=None):
 				'amount': amount,
 				'to': to,
 				'fees': fees,
-				'txformat': 'raw',
+				'txformat': txformat,
 				'mode': 'unsigned'}
 	res = send_request("sendasset", payload)
 
