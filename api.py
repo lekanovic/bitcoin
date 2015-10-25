@@ -395,7 +395,7 @@ def issueasset_wallet(email, amount, metadata='', fees=10000):
 	token_issuer = get_wallet(email)
 
 	try:
-		tx_unsigned, keylist, asset_list = token_issuer.issueasset(amount, metadata=metadata, fees=fees)
+		tx_unsigned, keylist, asset_list = token_issuer.openasset_issueasset(amount, metadata=metadata, fees=fees)
 	except InsufficientFunds as e:
 		raise
 	except UnconfirmedAddress as e:

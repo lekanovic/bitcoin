@@ -12,7 +12,7 @@ from pycoin.convention import tx_fee
 from picunia.collection.proof import ProofOfExistence
 from picunia.config.settings import Settings
 from picunia.database.storage import Storage
-from picunia.openasset.utils import oa_issueasset, oa_listunspent, oa_getbalance
+from picunia.openasset.utils import oa_issueasset, oa_listunspent, oa_getbalance, oa_sendasset
 import datetime
 import md5
 import json
@@ -420,7 +420,7 @@ class Wallet():
 
 		return tx1, address
 
-	def issueasset(self, amount, metadata='', fees=0):
+	def openasset_issueasset(self, amount, metadata='', fees=0):
 		bitcoin_address=None
 		key_index=0
 
@@ -454,7 +454,7 @@ class Wallet():
 
 		tx.set_unspents(unspents)
 
-		assets = oa_listunspent(bitcoin_address)
+		assets = self.openasset_listunspent(bitcoin_address)
 
 		asset_list = []
 		for a in assets:
@@ -473,10 +473,75 @@ class Wallet():
 
 		return tx, [key_index], asset_list
 
+	def openasset_sendasset(self, bitcoin_address, asset_id, amount, to_oa_address, fees=0):
+		'''
+			bitcoin_address - The bitcoin address containing the asset
+			asset_id - The asset ID identifying the asset to send
+			amount - Amount of assets to send
+			to_oa_address - The oa_address to send it to
+		'''
+		key_index = self.__get_address_index(bitcoin_address)
+		spendables = self.insight.spendables_for_address(bitcoin_address)
+
+		tx_unsigned = oa_sendasset(bitcoin_address,
+									asset_id,
+									amount,
+									to_oa_address,
+									fees=fees,
+									txformat='raw')
+
+		tx = Tx.tx_from_hex(tx_unsigned[1:-1])
+
+		unspents = []
+		for txin in tx.txs_in:
+			for s in spendables:
+				if txin.previous_hash == s.tx_hash and txin.previous_index == s.tx_out_index:
+
+					sp = Spendable(s.coin_value,
+									s.script,
+									txin.previous_hash,
+									txin.previous_index)
+					unspents.append(sp)
+		tx.set_unspents(unspents)
+
+		logger.debug("Transaction fee %d", tx.fee())
+		t = tx.as_hex(include_unspents=True)
+		logger.debug(t)
+		logger.debug("Transaction size %d unsigned", len(t))
+
+		return tx, [key_index]
+
+
+	def openasset_listunspent(self, bitcoin_address, minconf='1', maxconf='9999999'):
+
+		assets = oa_listunspent(bitcoin_address, minconf=minconf, maxconf=maxconf)
+
+		return assets
+
+	def openasset_getbalance(self, bitcoin_address, minconf='1', maxconf='9999999'):
+
+		assets = oa_getbalance(bitcoin_address, minconf=minconf, maxconf=maxconf)
+
+		return assets
+
+	def openasset_distribute(address, forward_address, price, metadata='', fees=None, mode='unsigned', txformat='raw'):
+		raise NotImplementedError(self.__class__.__name__ + '.openasset_distribute')
+
 
 '''
-pub = 'tpubDCwC9yxc8Bmz6hwtQ1EABBFfZsGYXq341HapWR5BSAMPppQTHKfaE3DBo6SpauMAF56dJdxXzqhtkhR7g7fBQK4cmSFa3JhnGvTnpr2BAWt'
+pub = 'tpubDCwC9yxc8BmzJzPh8TzAd7hSPDid58ENdbYKcnwEXPsCAydfofutTTW6S3tNCkr6d4dd9mbHzjTLm9fAD69uD3Uido865Z8g8ur8TwpXFcw'
 w = Wallet(pub)
+
+#print w.openasset_listunspent('mosh1uA8LcVqnRgj8XK1JFxrewj6hQ7YVG')
+print w.openasset_getbalance('mosh1uA8LcVqnRgj8XK1JFxrewj6hQ7YVG')
+
+tx = w.openasset_sendasset('mosh1uA8LcVqnRgj8XK1JFxrewj6hQ7YVG',
+							'2fErxWooof8vfheQxHfHfQ4Gtqaf4oK2X3H',
+							'5',
+							'bWyqaG4yTp6PXefr6B9RBx7sRzYuGczJUQ8')
+
+print w.openasset_getbalance('mosh1uA8LcVqnRgj8XK1JFxrewj6hQ7YVG')
+
 
 print "wallet index %s" % w.wallet_index
 print "key index %d" % w.index
