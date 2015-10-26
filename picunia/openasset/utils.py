@@ -1,3 +1,4 @@
+from pycoin.encoding import a2b_base58, b2a_base58, double_sha256
 from picunia.config.settings import Settings
 import requests
 import logging
@@ -6,6 +7,48 @@ import json
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('openassets')
 
+class EncodingError(Exception):
+    pass
+
+def as_openasset_address(address):
+	'''
+		Convert bitcoin address to openassets address
+
+		address - base58 acsii encoded bitcoin address
+		return - The openasset address
+	'''
+	def check_hash(data):
+		data, the_hash = data[:-4], data[-4:]
+		if double_sha256(data)[:4] == the_hash:
+			return True
+		else:
+			return False
+
+	data = None
+	version = None
+	namespace = None
+
+	decoded_bytes = a2b_base58(address)
+	data = decoded_bytes
+
+	if not check_hash(decoded_bytes):
+		raise EncodingError("hashed base58 has bad checksum %s" % address)
+
+	if len(decoded_bytes) == 26:
+		# The address has a namespace defined
+		namespace, version, data = decoded_bytes[0:1], decoded_bytes[1:2], decoded_bytes[2:-4]
+	elif len(decoded_bytes) == 25:
+		# The namespace is undefined
+		version, data = decoded_bytes[0:1], decoded_bytes[1:-4]
+		namespace = "".join(map(chr, [19]))
+	else:
+		raise ValueError('Invalid length')
+
+	full_payload = namespace + version + data
+
+	checksum = double_sha256(full_payload)[0:4]
+
+	return b2a_base58(full_payload + checksum)
 
 def send_request(operation, payload):
 	base_url = Settings.OPENASSET_SERVER
