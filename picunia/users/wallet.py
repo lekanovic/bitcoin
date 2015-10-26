@@ -87,6 +87,9 @@ class Wallet():
 		key_amount.append(d)
 		return key_amount
 
+	def get_oa_address(self):
+		return self.spendable[-1][u'openassets']['oa_address']
+
 	def get_key_info(self, bip32node):
 		child_number = bip32node.child_index()
 		if child_number >= 0x80000000:
