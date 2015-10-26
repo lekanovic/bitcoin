@@ -426,14 +426,14 @@ class Wallet():
 		return tx1, address
 
 	def openasset_issueasset(self, amount, metadata='', fees=0):
-		bitcoin_address=None
+
 		key_index=0
 
-		for idx, addr in enumerate(self.spendable):
-			if addr['amount'] >= (600 + fees):
-				bitcoin_address = addr['public_address']
-				key_index = idx
-				break
+		if self.spendable[-1]['amount'] < (600 + fees):
+			msg = "Address contains less than %d Satoshis" % ((600 + fees))
+			raise InsufficientFunds(msg)
+
+		bitcoin_address = self.spendable[-1]['public_address']#Change key
 
 		spendables = self.insight.spendables_for_address(bitcoin_address)
 
