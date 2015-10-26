@@ -12,7 +12,7 @@ from pycoin.convention import tx_fee
 from picunia.collection.proof import ProofOfExistence
 from picunia.config.settings import Settings
 from picunia.database.storage import Storage
-from picunia.openasset.utils import oa_issueasset, oa_listunspent, oa_getbalance, oa_sendasset
+from picunia.openasset.utils import oa_issueasset, oa_listunspent, oa_getbalance, oa_sendasset, as_openasset_address
 import datetime
 import md5
 import json
@@ -79,6 +79,11 @@ class Wallet():
 		d = {}
 		d[u'public_address'] = self.key_change.address()
 		d[u'amount'] = 0
+
+		d[u'openassets'] = dict(
+			oa_address=as_openasset_address(self.key_change.address()),
+			assets=[])
+
 		key_amount.append(d)
 		return key_amount
 
