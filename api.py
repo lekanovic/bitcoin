@@ -382,7 +382,7 @@ def request_payment(gcm_api_key, requester, request_from, amount, message):
 
 	return response
 
-def issueasset_wallet(email, amount, metadata='', fees=10000):
+def issueasset(email, amount, metadata='', fees=10000):
 	def get_wallet(email):
 		db = Storage()
 
@@ -417,6 +417,43 @@ def issueasset_wallet(email, amount, metadata='', fees=10000):
 	th = TransactionHandler(tx_info)
 
 	sign_tx(int(token_issuer.wallet_index),
+			keylist,
+			tx_unsigned.as_hex(include_unspents=True),
+			cb=th.callback)
+
+	return th
+
+def sendasset(self, from_email, to_email, amount, asset_id, to_oa_address):
+	def get_wallet(email):
+		db = Storage()
+
+		account = db.find_account(email)
+
+		wallet = db.find_wallet(account["wallets"][0])
+
+		return Wallet.from_json(wallet)
+
+	token_sender = get_wallet(from_email)
+	token_receiver = get_wallet(to_email)
+
+	to_oa_address = token_receiver.get_oa_address()
+
+	try:
+		tx_unsigned, keylist = token_sender.openasset_sendasset(bitcoin_address,
+																asset_id,
+																amount,
+																to_oa_address,
+																fees=1000)
+	except InsufficientFunds as e:
+		raise
+	except UnconfirmedAddress as e:
+		raise
+
+	start_service()
+
+	th = TransactionHandler(tx_info)
+
+	sign_tx(int(token_sender.wallet_index),
 			keylist,
 			tx_unsigned.as_hex(include_unspents=True),
 			cb=th.callback)
