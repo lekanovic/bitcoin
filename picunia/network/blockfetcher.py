@@ -3,7 +3,10 @@ from picunia.users.wallet import Wallet
 from picunia.network.insightserviceproxy import InsightServiceProxy
 from pycoin.serialize import b2h_rev
 from pycoin.tx import Tx, TxIn, TxOut, tx_utils
+from pycoin.tx.script.tools import opcode_list
+from pycoin.serialize.bitcoin_streamer import parse_bc_int
 from picunia.config.settings import Settings
+from picunia.openasset.utils import oa_issueasset, oa_listunspent, oa_getbalance
 #from daemon import runner
 import os
 import time
@@ -11,6 +14,7 @@ import json
 import threading
 import datetime
 import logging
+import io
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -38,12 +42,44 @@ class BlockchainFetcher():
 			total = self.insight.address_balance(btc_address)
 		return total
 
+
+	def is_openasset(self, tx_out):
+		OPEN_ASSETS_TAG = '4f41'
+		op_codes = opcode_list(tx_out.script)
+		print op_codes
+		if op_codes[0] != 'OP_RETURN':
+			return False
+
+		payload = op_codes[1].encode('utf-8')
+
+		with io.BytesIO(payload) as stream:
+			oa_version = stream.read(4)
+			if oa_version != OPEN_ASSETS_TAG:
+				return False
+			logger.info("Open asset transaction")
+		return True
+
+	def check_openasset(self, wallet, btc_address):
+
+		asset_balance = oa_getbalance(btc_address)
+		logger.info(asset_balance)
+
+		if len(asset_balance) > 1:
+			raise ValueError('Only one bitcoin address allowed in the wallet')
+
+		for a in  asset_balance[0]['assets']:
+			logger.info(a)
+			a['metadata'] = "FIX THIS"
+			self.db.update_wallet_asset(wallet, a)
+
+
 	def check_inputs_outputs(self, tx):
 
 		for t1 in tx.txs_in:
 			btc_address = t1.bitcoin_address(Settings.NETCODE)
 			account, wallet = self.db.find_bitcoin_address(btc_address)
 			logger.info("btc_address %s" % btc_address)
+			logger.info(opcode_list(t1.script))
 			if account and wallet['public_key']:
 				w = Wallet.from_json(wallet)
 
@@ -51,18 +87,25 @@ class BlockchainFetcher():
 
 				logger.info("Sending %d SAT from %s address %s" % (total, account['email'], btc_address))
 
+
 				w.update_balance(btc_address, total)
 				self.db.update_wallet(w.to_dict())
 
+		isopenasset = any((True for t2 in tx.txs_out if self.is_openasset(t2)))
+
 		for t2 in tx.txs_out:
-			btc_address = t2.bitcoin_address(Settings.NETCODE)
+			if t2.bitcoin_address(Settings.NETCODE) != None:
+				btc_address = t2.bitcoin_address(Settings.NETCODE)
 			account, wallet = self.db.find_bitcoin_address(btc_address)
 			logger.info("btc_address %s" % btc_address)
+
 			if account and wallet['public_key']:
 				w = Wallet.from_json(wallet)
 
-				total = self.get_balance(btc_address)
+				if isopenasset:
+					self.check_openasset(wallet, btc_address)
 
+				total = self.get_balance(btc_address)
 				logger.info("Receiving %d SAT %s to address %s" % (total, account['email'], btc_address))
 
 				w.update_balance(btc_address, total)

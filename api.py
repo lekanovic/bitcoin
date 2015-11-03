@@ -395,7 +395,7 @@ def issueasset(email, amount, metadata='', fees=10000):
 	token_issuer = get_wallet(email)
 
 	try:
-		tx_unsigned, keylist, asset_list = token_issuer.openasset_issueasset(amount, metadata=metadata, fees=fees)
+		tx_unsigned, keylist = token_issuer.openasset_issueasset(amount, metadata=metadata, fees=fees)
 	except InsufficientFunds as e:
 		raise
 	except UnconfirmedAddress as e:
@@ -410,7 +410,12 @@ def issueasset(email, amount, metadata='', fees=10000):
 	tx_info['type'] = "ISSUEASSET"
 	tx_info['message'] = ''
 
-	tx_info['openasset'] = asset_list
+	asset = {}
+	asset['oa_address'] = token_issuer.get_oa_address()
+	asset['quantity'] = amount
+	asset['metadata'] = metadata
+
+	tx_info['openasset'] = asset
 
 	start_service()
 
@@ -423,7 +428,7 @@ def issueasset(email, amount, metadata='', fees=10000):
 
 	return th
 
-def sendasset(self, from_email, to_email, amount, asset_id, to_oa_address):
+def sendasset(from_email, to_email, amount, asset_id):
 	def get_wallet(email):
 		db = Storage()
 
@@ -436,7 +441,26 @@ def sendasset(self, from_email, to_email, amount, asset_id, to_oa_address):
 	token_sender = get_wallet(from_email)
 	token_receiver = get_wallet(to_email)
 
+	bitcoin_address = token_sender.key_change.address()
 	to_oa_address = token_receiver.get_oa_address()
+
+	tx_info={}
+	tx_info['from'] = from_email
+	tx_info['to'] = to_email
+	tx_info['amount'] = 600 #Dust for assets
+	tx_info['confirmations'] = -1
+	tx_info['date'] = str( datetime.datetime.now() )
+	tx_info['block'] = -1
+	tx_info['type'] = "SENDASSET"
+	tx_info['message'] = ''
+
+	asset = {}
+	asset['oa_address'] = to_oa_address
+	asset['quantitys'] = amount
+	asset['metadata'] = ''
+	asset['asset_id'] = asset_id
+
+	tx_info['openasset'] = asset
 
 	try:
 		tx_unsigned, keylist = token_sender.openasset_sendasset(bitcoin_address,
@@ -458,7 +482,7 @@ def sendasset(self, from_email, to_email, amount, asset_id, to_oa_address):
 			tx_unsigned.as_hex(include_unspents=True),
 			cb=th.callback)
 
-	return th
+	return th, to_oa_address
 
 '''
 transaction_handler = pay_to_address('lekanovic@gmail.com', 'popjull@teleworm.us', 10000)

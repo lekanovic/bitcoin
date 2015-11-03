@@ -187,6 +187,101 @@ def write_blockchain_message_rpc(email, message):
 	return resp
 
 @app.task
+def issueasset_rpc(email, amount, metadata):
+	'''
+		Issue an asset and attach some metadata. Metadata
+		should be a URL to the asset information
+
+		email - Email address for the asset issuer
+		amount - How many assets to issue
+		metadata - Any data, but prefered is to have an URL
+				pointing to asset information
+	'''
+	resp = {}
+	resp['status'] = 'SUCCESS'
+	resp['type'] = 'ISSUEASSET'
+	resp['from'] = email
+	resp['metadata'] = metadata
+
+	lock = LockFile(signservice)
+	lock.acquire()
+
+	try:
+		transaction_handler = issueasset(email, amount, metadata=metadata, fees=10000)
+	except InsufficientFunds as e:
+		lock.release()
+		resp['status'] = 'FAILED %s' % e.message
+		return resp
+	except UnconfirmedAddress as e:
+		lock.release()
+		resp['status'] = 'FAILED %s' % e.message
+		return resp
+
+	while not transaction_handler.has_been_called:
+		time.sleep(0.5)
+
+	lock.release()
+
+	if transaction_handler.has_error:
+		resp['status'] = 'FAILED %s' % transaction_handler.error_message
+		return resp
+
+	resp['tx_id'] = transaction_handler.tx_info['tx_id']
+
+	return resp
+
+@app.task
+def sendasset_rpc(from_email, to_email, amount, asset_id):
+	'''
+		Send an asset to another user.
+		from_email - Self explained
+		to_email - Self explained
+		amount - How many assets to send
+		asset_id - The ID of the asset to send
+		to_oa_address - Opanasset address to send asset to
+	'''
+	resp = {}
+	resp['status'] = 'SUCCESS'
+	resp['type'] = 'SENDASSET'
+	resp['from'] = from_email
+	resp['to'] = to_email
+	resp['amount'] = amount
+	resp['asset_id'] = asset_id
+
+
+	lock = LockFile(signservice)
+	lock.acquire()
+
+	try:
+		transaction_handler, to_oa_address = sendasset(from_email,
+										to_email,
+										amount,
+										asset_id)
+		resp['oa_address'] = to_oa_address
+
+	except InsufficientFunds as e:
+		lock.release()
+		resp['status'] = 'FAILED %s' % e.message
+		return resp
+	except UnconfirmedAddress as e:
+		lock.release()
+		resp['status'] = 'FAILED %s' % e.message
+		return resp
+
+	while not transaction_handler.has_been_called:
+		time.sleep(0.5)
+
+	lock.release()
+
+	if transaction_handler.has_error:
+		resp['status'] = 'FAILED %s' % transaction_handler.error_message
+		return resp
+
+	resp['tx_id'] = transaction_handler.tx_info['tx_id']
+
+	return resp
+
+@app.task
 def request_payment_rpc(gcm_api_key, requester, request_from, amount, msg):
 	resp = request_payment(gcm_api_key, requester, request_from, amount, msg)
 

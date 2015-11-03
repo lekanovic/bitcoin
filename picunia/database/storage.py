@@ -54,6 +54,32 @@ class Storage(object):
 		res = self.dbw.wallet.find_one({"wallet_index" : wallet['wallet_index']})
 		self.dbw.wallet.update({'_id': res['_id']}, wallet, upsert=False, multi=False)
 
+	def update_wallet_asset(self, wallet, new_asset):
+		try:
+			#wallet_index = wallet['wallet_index']
+			asset_id = new_asset['asset_id']
+			quantity = new_asset['quantity']
+			metadata = new_asset['metadata']
+			asset_list = wallet['spendable'][-1]['openassets']['assets']
+		except TypeError as e:
+			print e
+
+		add_to_list = True
+		for a in asset_list[:]:
+			if a['asset_id'] == new_asset['asset_id']:
+				print "hittade"
+				add_to_list = False
+				a['quantity'] = new_asset['quantity']
+		#If asset id does not exist add it
+		if add_to_list:
+			print "appending"
+			asset_list.append(new_asset)
+
+		#Add the new asset list to the wallet
+		wallet['spendable'][-1]['openassets']['assets'] = asset_list
+
+		self.update_wallet(wallet)
+
 	def update_account(self, account):
 		res = self.__find_account(account)
 		self.dba.account.update({'_id': res['_id']}, account, upsert=False, multi=False)

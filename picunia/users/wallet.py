@@ -11,7 +11,6 @@ from pycoin.tx.tx_utils import distribute_from_split_pool
 from pycoin.convention import tx_fee
 from picunia.collection.proof import ProofOfExistence
 from picunia.config.settings import Settings
-from picunia.database.storage import Storage
 from picunia.openasset.utils import oa_issueasset, oa_listunspent, oa_getbalance, oa_sendasset, as_openasset_address
 import datetime
 import md5
@@ -462,24 +461,12 @@ class Wallet():
 
 		tx.set_unspents(unspents)
 
-		assets = self.openasset_listunspent(bitcoin_address)
-
-		asset_list = []
-		for a in assets:
-			if a['asset_id'] != None:
-				item = {}
-				item['asset_id'] = a['asset_id']
-				item['asset_quantity'] = a['asset_quantity']
-				item['oa_address'] = a['oa_address']
-				item['address'] = a['address']
-				asset_list.append(item)
-
 		logger.debug("Transaction fee %d", tx.fee())
 		t = tx.as_hex(include_unspents=True)
 		logger.debug(t)
 		logger.debug("Transaction size %d unsigned", len(t))
 
-		return tx, [key_index], asset_list
+		return tx, [key_index]
 
 	def openasset_sendasset(self, bitcoin_address, asset_id, amount, to_oa_address, fees=0):
 		'''
