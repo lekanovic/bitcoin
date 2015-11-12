@@ -19,9 +19,11 @@ class Settings():
 	if NETWORK == 'testnet':
 		NETCODE = 'XTN'
 		KEY_PATHS = "44H/1H/"
+		OA_VERSION_BYTE = b'\x73'
 	else:
 		NETCODE = 'BTC'
 		KEY_PATHS = "44H/0H/"
+		OA_VERSION_BYTE = b'\x17'
 	if USE_RPI_EMULATOR:
 		SIGN_TX_PATH = "picunia.security.sign_tx_client_emulator"
 	else:
