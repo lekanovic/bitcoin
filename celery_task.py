@@ -238,7 +238,6 @@ def sendasset_rpc(from_email, to_email, amount, asset_id):
 		to_email - Self explained
 		amount - How many assets to send
 		asset_id - The ID of the asset to send
-		to_oa_address - Opanasset address to send asset to
 	'''
 	resp = {}
 	resp['status'] = 'SUCCESS'
