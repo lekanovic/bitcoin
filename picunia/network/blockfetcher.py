@@ -6,7 +6,8 @@ from pycoin.tx import Tx, TxIn, TxOut, tx_utils
 from pycoin.tx.script.tools import opcode_list
 from pycoin.serialize.bitcoin_streamer import parse_bc_int
 from picunia.config.settings import Settings
-from picunia.openasset.utils import oa_issueasset, oa_listunspent, oa_getbalance
+from picunia.openasset.utils import oa_parse_script, OPEN_ASSETS_TAG
+from picunia.openasset.utils import hash_script, oa_issueasset, oa_listunspent, oa_getbalance
 #from daemon import runner
 import os
 import time
@@ -15,6 +16,7 @@ import threading
 import datetime
 import logging
 import io
+import binascii
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -42,35 +44,68 @@ class BlockchainFetcher():
 			total = self.insight.address_balance(btc_address)
 		return total
 
-
-	def is_openasset(self, tx_out):
-		OPEN_ASSETS_TAG = '4f41'
+	def is_markeroutput(self, tx_out):
 		op_codes = opcode_list(tx_out.script)
-		print op_codes
+
 		if op_codes[0] != 'OP_RETURN':
 			return False
 
-		payload = op_codes[1].encode('utf-8')
+		payload = binascii.unhexlify(op_codes[1])
 
-		with io.BytesIO(payload) as stream:
-			oa_version = stream.read(4)
-			if oa_version != OPEN_ASSETS_TAG:
-				return False
-			logger.info("Open asset transaction")
+		oap_marker = payload[0:4]
+		if oap_marker != OPEN_ASSETS_TAG:
+			return False
 		return True
 
-	def check_openasset(self, wallet, btc_address):
+	def update_openasset(self, tx):
 
-		asset_balance = oa_getbalance(btc_address)
-		logger.info(asset_balance)
+		addresses  = set()
+		is_issue_asset = True
+		issuance_asset = []
+		transact_asset = []
+		markeroutput = None
+		metadata = None
 
-		if len(asset_balance) > 1:
-			raise ValueError('Only one bitcoin address allowed in the wallet')
+		for i, t2 in enumerate(tx.txs_out):
+			btc_address = t2.bitcoin_address(Settings.NETCODE)
+			if self.is_markeroutput(t2):
+				is_issue_asset = False
+				prev_tx = self.insight.get_tx(tx.txs_in[0].previous_hash)
+				script = prev_tx.txs_out[tx.txs_in[0].previous_index].script
 
-		for a in  asset_balance[0]['assets']:
-			logger.info(a)
-			a['metadata'] = "FIX THIS"
-			self.db.update_wallet_asset(wallet, a)
+				markeroutput = t2.script
+				continue
+
+			if is_issue_asset:
+				issuance_asset.append(t2)
+			else:
+				transact_asset.append(t2)
+
+			addresses.add(btc_address)
+
+		if markeroutput:
+			metadata, amount = oa_parse_script(markeroutput)
+			print "METADATA:", metadata, amount
+
+		for a in issuance_asset:
+			print "ISSUEASSET asset", a
+
+		for a in transact_asset:
+			print "TRANSACTION asset", a
+
+		for addr in list(addresses):
+			_, wallet = self.db.find_bitcoin_address(addr)
+
+			asset_balance = oa_getbalance(addr)
+			print asset_balance
+			print "oa_address:",asset_balance[0]['oa_address']
+			for a in  asset_balance[0]['assets']:
+				#a['metadata'] = metadata
+				print a
+				self.db.update_wallet_asset(wallet,
+											a['asset_id'], 
+											a['quantity'],
+											metadata=metadata)
 
 
 	def check_inputs_outputs(self, tx):
@@ -87,23 +122,21 @@ class BlockchainFetcher():
 
 				logger.info("Sending %d SAT from %s address %s" % (total, account['email'], btc_address))
 
-
 				w.update_balance(btc_address, total)
 				self.db.update_wallet(w.to_dict())
 
-		isopenasset = any((True for t2 in tx.txs_out if self.is_openasset(t2)))
+		isopenasset = any((True for t2 in tx.txs_out if self.is_markeroutput(t2)))
+
+		if isopenasset:
+			self.update_openasset(tx)
 
 		for t2 in tx.txs_out:
-			if t2.bitcoin_address(Settings.NETCODE) != None:
-				btc_address = t2.bitcoin_address(Settings.NETCODE)
+			btc_address = t2.bitcoin_address(Settings.NETCODE)
 			account, wallet = self.db.find_bitcoin_address(btc_address)
 			logger.info("btc_address %s" % btc_address)
 
 			if account and wallet['public_key']:
 				w = Wallet.from_json(wallet)
-
-				if isopenasset:
-					self.check_openasset(wallet, btc_address)
 
 				total = self.get_balance(btc_address)
 				logger.info("Receiving %d SAT %s to address %s" % (total, account['email'], btc_address))
