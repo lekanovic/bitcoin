@@ -507,13 +507,18 @@ class Wallet():
 		return tx, [key_index]
 
 
-	def openasset_listunspent(self, bitcoin_address, minconf='1', maxconf='9999999'):
+	def openasset_listunspent(self, bitcoin_address=None, minconf='1', maxconf='9999999'):
 
+		if bitcoin_address == None:
+			bitcoin_address = self.key_change.address()
 		assets = oa_listunspent(bitcoin_address, minconf=minconf, maxconf=maxconf)
 
 		return assets
 
-	def openasset_getbalance(self, bitcoin_address, minconf='1', maxconf='9999999'):
+	def openasset_getbalance(self, bitcoin_address=None, minconf='1', maxconf='9999999'):
+
+		if bitcoin_address == None:
+			bitcoin_address = self.key_change.address()
 
 		assets = oa_getbalance(bitcoin_address, minconf=minconf, maxconf=maxconf)
 
